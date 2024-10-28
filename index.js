@@ -96,14 +96,101 @@ const spaceShip = new SpaceShip({
 });
 
 function updatePosition() {
-    keys.w.pressed ? spaceShip.movement.y = -1.6 : keys.s.pressed ? spaceShip.movement.y = 1.4 : spaceShip.movement.y = 0.1;
-    keys.a.pressed ? spaceShip.movement.x = -1.8 : keys.d.pressed ? spaceShip.movement.x = 1.8 : spaceShip.movement.x = 0;
+    keys.w.pressed ? spaceShip.movement.y = -4 : keys.s.pressed ? spaceShip.movement.y = 3 : spaceShip.movement.y = 0.;
+    keys.a.pressed ? spaceShip.movement.x = -4.5 : keys.d.pressed ? spaceShip.movement.x = 4.5 : spaceShip.movement.x = 0;
     spaceShip.move();
     requestAnimationFrame(updatePosition);
 }
 
 // Start animation
 updatePosition();
+
+class Asteroid {
+    
+    constructor({ spawnPoint, level}) {
+        const colors = ['green','yellow','orange','darkred'];
+        this.spawnPoint = spawnPoint;
+        this.movePoint = -50;
+        this.level = level;
+        this.color = colors[level-1];
+        this.speed = 6 - level + Math.random();
+        this.drawAsteroid();
+    }
+
+    drawAsteroid() {
+        const points = [];
+        const sides = 5 + Math.floor(Math.random() * 3); // Random number of sides (5-10)
+        for (let i = 0; i < sides; i++) {
+            const angle = (i / sides) * Math.PI * 2;
+            const distance = this.level * 20 * (0.7 + Math.random() * 0.3); // Vary distance for irregularity
+            const x = Math.cos(angle) * distance;
+            const y = Math.sin(angle) * distance;
+            points.push(`${x},${y}`);
+        }
+
+        this.asteroid = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+
+        this.asteroid.setAttribute("points", points.join(" "));
+        this.asteroid.setAttribute("stroke", "white");
+        this.asteroid.setAttribute("fill", `${this.color}`);
+        this.asteroid.setAttribute("stroke-width", "2");
+        this.asteroid.setAttribute("transform", `translate(${this.spawnPoint}, ${this.movePoint})`);
+
+        gameArea.appendChild(this.asteroid);
+    }
+
+    move() {
+        this.movePoint += this.speed;
+        this.asteroid.setAttribute("transform", `translate(${this.spawnPoint}, ${this.movePoint})`);
+    }
+    
+}
+
+function animateAsteroids(asteroid) {
+    asteroid.move(); 
+    asteroid.speed = keys.w.pressed ? 7 - asteroid.level + Math.random()
+                    : keys.s.pressed ?  5.5 - asteroid.level + Math.random() 
+                    : 6 - asteroid.level + Math.random() 
+    requestAnimationFrame(() => animateAsteroids(asteroid));
+}
+
+function spawnAsteroids(){
+
+    setInterval(() => {
+        const asteroid = new Asteroid({
+            spawnPoint: 100 + Math.random() * window.innerWidth, 
+            level: 4
+        });
+        animateAsteroids(asteroid);
+    }, 2000);
+    
+    setInterval(() => {
+        const asteroid = new Asteroid({
+            spawnPoint: 100 + Math.random() * window.innerWidth, 
+            level: 3
+        });
+        animateAsteroids(asteroid);
+    }, 1500);
+    
+    setInterval(() => {
+        const asteroid = new Asteroid({
+            spawnPoint: 100 + Math.random() * window.innerWidth, 
+            level: 2
+        });
+        animateAsteroids(asteroid);
+    }, 1000);
+    
+    setInterval(() => {
+        const asteroid = new Asteroid({
+            spawnPoint: 100 + Math.random() * window.innerWidth, 
+            level: 1
+        });
+        animateAsteroids(asteroid);
+    }, 500);
+}
+
+spawnAsteroids();
+
 
 document.addEventListener('keydown', (event)=>{
     switch(event.code){
