@@ -1,6 +1,7 @@
 const gameArea = document.getElementById("game-area");
 const keys = {
-    w: { pressed: false }, s: { pressed: false }, a: { pressed: false }, d: { pressed: false }
+    w: { pressed: false }, s: { pressed: false }, a: { pressed: false }, d: { pressed: false },
+    n: { pressed: false }, m: { pressed: false }
 };
 
 gameArea.style.background = "black";
@@ -10,6 +11,7 @@ gameArea.setAttribute("height", window.innerHeight);
 class SpaceShip {
     constructor({ position, movement, color }) {
         this.position = { x: position.x, y: position.y };
+        this.angle = 0; 
         this.movement = { x: movement.x, y: movement.y };
         this.color = { stroke: color.stroke, fill: color.fill}
         this.initialize();
@@ -17,11 +19,11 @@ class SpaceShip {
 
     initialize() {
         // Create the spaceship polygon
-        this.spaceShip = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
-        this.spaceShip.setAttribute("points", "30,-15 10,40 50,40");
-        this.spaceShip.setAttribute("fill", this.color.fill);
-        this.spaceShip.setAttribute("stroke", this.color.stroke);
-        this.spaceShip.setAttribute("stroke-width", "5");
+        this.spaceShipBody = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+        this.spaceShipBody.setAttribute("points", "30,-15 10,40 50,40");
+        this.spaceShipBody.setAttribute("fill", this.color.fill);
+        this.spaceShipBody.setAttribute("stroke", this.color.stroke);
+        this.spaceShipBody.setAttribute("stroke-width", "5");
 
         // Create fire element (smaller triangle)
         this.fire = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
@@ -34,23 +36,25 @@ class SpaceShip {
         this.rocketWindow = document.createElementNS("http://www.w3.org/2000/svg", "circle");
         this.rocketWindow.setAttribute("r", "10");
         this.rocketWindow.setAttribute("fill", "cyan");
+        this.rocketWindow.setAttribute("cx", "30");
+        this.rocketWindow.setAttribute("cy", "25");
 
-        // Append elements to the game area
+        this.spaceShip = document.createElementNS("http://www.w3.org/2000/svg", "g");
+
+
+        this.spaceShip.appendChild(this.spaceShipBody);
+        this.spaceShip.appendChild(this.fire);
+        this.spaceShip.appendChild(this.rocketWindow);
         gameArea.appendChild(this.spaceShip);
-        gameArea.appendChild(this.fire);
-        gameArea.appendChild(this.rocketWindow);
-
-        // Initial position
+        // Initial positione
         this.updateTransform();
         this.fireAnimation();
     }
     updateTransform() {
         // Update the transform for the spaceship and related elements
         const { x, y } = this.position;
-        this.spaceShip.setAttribute("transform", `translate(${x}, ${y})`);
-        this.fire.setAttribute("transform", `translate(${x}, ${y})`);
-        this.rocketWindow.setAttribute("cx", x + 30);
-        this.rocketWindow.setAttribute("cy", y + 24);
+        const angle = this.angle;
+        this.spaceShip.setAttribute("transform", `translate(${x}, ${y}) rotate(${angle} ,30, 40)`);
     }
 
     fireAnimation(){
@@ -98,6 +102,7 @@ const spaceShip = new SpaceShip({
 function updatePosition() {
     keys.w.pressed ? spaceShip.movement.y = -4 : keys.s.pressed ? spaceShip.movement.y = 3 : spaceShip.movement.y = 0.;
     keys.a.pressed ? spaceShip.movement.x = -4.5 : keys.d.pressed ? spaceShip.movement.x = 4.5 : spaceShip.movement.x = 0;
+    keys.n.pressed ? spaceShip.angle -= 1.5 : keys.m.pressed ? spaceShip.angle += 1.5 : spaceShip.angle += 0;
     spaceShip.move();
     requestAnimationFrame(updatePosition);
 }
@@ -108,12 +113,13 @@ updatePosition();
 class Asteroid {
     
     constructor({ spawnPoint, level}) {
-        const colors = ['green','yellow','orange','darkred'];
+        const colors = ['green','orange','red','darkred'];
         this.spawnPoint = spawnPoint;
         this.movePoint = -50;
         this.level = level;
         this.color = colors[level-1];
         this.speed = 6 - level + Math.random();
+        this.radius = this.level * 20;
         this.drawAsteroid();
     }
 
@@ -122,19 +128,32 @@ class Asteroid {
         const sides = 5 + Math.floor(Math.random() * 3); // Random number of sides (5-10)
         for (let i = 0; i < sides; i++) {
             const angle = (i / sides) * Math.PI * 2;
-            const distance = this.level * 20 * (0.7 + Math.random() * 0.3); // Vary distance for irregularity
+            const distance = this.radius * (0.7 + Math.random() * 0.3); // Vary distance for irregularity
             const x = Math.cos(angle) * distance;
             const y = Math.sin(angle) * distance;
             points.push(`${x},${y}`);
         }
 
-        this.asteroid = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+        this.asteroidPolygon = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
 
-        this.asteroid.setAttribute("points", points.join(" "));
-        this.asteroid.setAttribute("stroke", "white");
-        this.asteroid.setAttribute("fill", `${this.color}`);
-        this.asteroid.setAttribute("stroke-width", "2");
-        this.asteroid.setAttribute("transform", `translate(${this.spawnPoint}, ${this.movePoint})`);
+        this.asteroidPolygon.setAttribute("points", points.join(" "));
+        this.asteroidPolygon.setAttribute("stroke", "white");
+        this.asteroidPolygon.setAttribute("fill", `${this.color}`);
+        this.asteroidPolygon.setAttribute("stroke-width", "2");
+        this.asteroidPolygon.setAttribute("transform", `translate(${this.spawnPoint}, ${this.movePoint})`);
+
+        this.text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        this.text.setAttribute("x", this.spawnPoint); // Centered horizontally at the spawn point
+        this.text.setAttribute("y", this.movePoint); // Centered vertically at the spawn point
+        this.text.setAttribute("fill", "white");
+        this.text.setAttribute("font-size", `${this.level * 15}`);
+        this.text.setAttribute("font-family", "Arial");
+        this.text.setAttribute("text-anchor", "middle"); // Center text horizontally
+        this.text.textContent = `${this.level}`;
+
+        this.asteroid = document.createElementNS("http://www.w3.org/2000/svg", "g");
+        this.asteroid.appendChild(this.asteroidPolygon);
+        this.asteroid.appendChild(this.text);
 
         gameArea.appendChild(this.asteroid);
     }
@@ -142,27 +161,28 @@ class Asteroid {
     move() {
         this.movePoint += this.speed;
         this.asteroid.setAttribute("transform", `translate(${this.spawnPoint}, ${this.movePoint})`);
+        if(this.movePoint >= 800)
+            gameArea.removeChild(this.asteroid);
     }
-    
 }
 
 function animateAsteroids(asteroid) {
     asteroid.move(); 
-    asteroid.speed = keys.w.pressed ? 7 - asteroid.level + Math.random()
+    asteroid.speed = keys.w.pressed ? 6.5 - asteroid.level + Math.random()
                     : keys.s.pressed ?  5.5 - asteroid.level + Math.random() 
                     : 6 - asteroid.level + Math.random() 
     requestAnimationFrame(() => animateAsteroids(asteroid));
 }
 
-function spawnAsteroids(){
 
+function spawnAsteroids(){
     setInterval(() => {
         const asteroid = new Asteroid({
             spawnPoint: 100 + Math.random() * window.innerWidth, 
             level: 4
         });
         animateAsteroids(asteroid);
-    }, 2000);
+    }, 3000);
     
     setInterval(() => {
         const asteroid = new Asteroid({
@@ -170,7 +190,7 @@ function spawnAsteroids(){
             level: 3
         });
         animateAsteroids(asteroid);
-    }, 1500);
+    }, 2000);
     
     setInterval(() => {
         const asteroid = new Asteroid({
@@ -178,7 +198,7 @@ function spawnAsteroids(){
             level: 2
         });
         animateAsteroids(asteroid);
-    }, 1000);
+    }, 1500);
     
     setInterval(() => {
         const asteroid = new Asteroid({
@@ -186,11 +206,24 @@ function spawnAsteroids(){
             level: 1
         });
         animateAsteroids(asteroid);
-    }, 500);
+    }, 1000);
 }
 
-spawnAsteroids();
+/*
+function checkAsteroidCollisions(asteroid1, asteroid2) {
+    const dx = asteroid1.spawnPoint - asteroid2.spawnPoint;  
+    const dy = asteroid1.movePoint - asteroid2.movePoint; 
+    const distance = Math.sqrt(dx * dx + dy * dy); 
+    const combinedRadius = asteroid1.radius + asteroid2.radius;  
 
+    if(distance <= combinedRadius) {
+        asteroid1.asteroid.setAttribute("transform", `rotate(10, ${asteroid1.asteroid.spawnPoint},${asteroid1.asteroid.movePoint})`);
+        asteroid2.asteroid.setAttribute("transform", `rotate(-10, ${asteroid2.asteroid.spawnPoint},${asteroid1.asteroid.movePoint})`);
+    }
+}
+*/
+
+spawnAsteroids();
 
 document.addEventListener('keydown', (event)=>{
     switch(event.code){
@@ -205,6 +238,12 @@ document.addEventListener('keydown', (event)=>{
             break;
         case "KeyD":
             keys.d.pressed = true;
+            break;
+        case "KeyN":
+            keys.n.pressed = true;
+            break;
+        case "KeyM":
+            keys.m.pressed = true;
             break;
     }
 });
@@ -222,6 +261,12 @@ document.addEventListener('keyup', (event)=>{
             break;
         case "KeyD":
             keys.d.pressed = false;
+            break;
+        case "KeyN":
+            keys.n.pressed = false;
+            break;
+        case "KeyM":
+            keys.m.pressed = false;
             break;
     }
 });
