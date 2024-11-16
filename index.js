@@ -20,26 +20,55 @@ scoreDisplay.setAttribute("x", window.innerWidth / 20);
 scoreDisplay.setAttribute("y", window.innerHeight / 10);
 gameArea.appendChild(scoreDisplay);
 
-setInterval( () => scoreDisplay.textContent = `${score}`, 100 );
+const scoreInterval = setInterval( () => scoreDisplay.textContent = `Score: ${score}`, 100 );
 
+function gameOver(){
+    clearInterval(scoreInterval);
+    const finalText = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    finalText.setAttribute("fill", "white");
+    finalText.setAttribute("font-size", 100);
+    finalText.setAttribute("font-family", "Arial");
+    finalText.setAttribute("x", window.innerWidth / 2);
+    finalText.setAttribute("y", window.innerHeight * 0.45);
+    finalText.setAttribute("text-anchor", "middle");
+    finalText.setAttribute("baseline-direction", "middle");
+
+    finalText.textContent = `GAME OVER!`;
+    const finalScore = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    finalScore.setAttribute("fill", "white");
+    finalScore.setAttribute("font-size", 40);
+    finalScore.setAttribute("font-family", "Arial");
+    finalScore.setAttribute("x", window.innerWidth / 2);
+    finalScore.setAttribute("y", window.innerHeight * 0.55);
+    finalScore.setAttribute("text-anchor", "middle");
+    finalScore.setAttribute("baseline-direction", "middle"); 
+    finalScore.textContent = `Your Score Was ${scoreDisplay.textContent}`;
+
+    gameArea.appendChild(finalText);
+    gameArea.appendChild(finalScore);
+}
 
 class Bullet{
-    constructor({spaceShipPosition}) {
+    constructor({spaceShipPosition, spaceShipAngle}) {
         this.bullet = document.createElementNS("http://www.w3.org/2000/svg", "line");
         this.bullet.setAttribute("stroke", "lime");
         this.bullet.setAttribute("stroke-width", 4);
+
+        this.angle = spaceShipAngle;
             
         this.position = {
-            x1: spaceShipPosition.x + 30, 
-            y1: spaceShipPosition.y - 40, 
+            x1: spaceShipPosition.x + 30,
+            y1: spaceShipPosition.y,
             x2: spaceShipPosition.x + 30, 
-            y2: spaceShipPosition.y - 15  
+            y2: spaceShipPosition.y + 40 
         };
 
         this.bullet.setAttribute('x1', this.position.x1);
         this.bullet.setAttribute('y1', this.position.y1);
         this.bullet.setAttribute('x2', this.position.x2);
         this.bullet.setAttribute('y2', this.position.y2);
+        console.log(this.angle);
+        this.bullet.setAttribute("transform", `rotate(${this.angle},${this.position.x2}, ${this.position.y2})`);
 
         bullets.push(this);
         gameArea.appendChild(this.bullet);
@@ -55,7 +84,7 @@ class Bullet{
     
             if (this.position.y2 < 0 && this.bullet.parentNode === gameArea) {
                 gameArea.removeChild(this.bullet);
-                bullets.splice(bullets.indexOf(this), 1); // Remove from array
+                bullets.splice(bullets.indexOf(this), 1); 
             } else {
                 requestAnimationFrame(moveBullet);
             }
@@ -63,10 +92,25 @@ class Bullet{
 
         requestAnimationFrame(moveBullet);
     }
+    /*
+    getCoordinates() {
+         const radians = this.angle * (Math.PI / 180); 
+         const x1 = this.position.x1; 
+         const y1 = this.position.y1; 
+         const x2 = this.position.x2; 
+         const y2 = this.position.y2; 
+
+         const x1P = x2 + (x1 - x2) * Math.cos(radians) - (y1 - y2) * Math.sin(radians); 
+         const y1P = y2 + (x1 - x2) * Math.sin(radians) + (y1 - y2) * Math.cos(radians); 
+         return { Ax: x1P, Ay: y1P }; 
+    }
+    */
 }
 
 class SpaceShip {
     constructor({ position, movement, color }) {
+        this.active = true;
+        this.lifes = 3;
         this.position = { x: position.x, y: position.y };
         this.angle = 0; 
         this.movement = { x: movement.x, y: movement.y };
@@ -104,6 +148,29 @@ class SpaceShip {
         this.engineAnimation();
     }
 
+    damagedAnimation(){
+        return new Promise((resolve) => {
+            setTimeout( () => {
+                this.spaceShipBody.setAttribute("fill", "orange")
+                this.spaceShipBody.setAttribute("stroke", "white")
+            }, 100);
+            setTimeout( () => {
+                this.spaceShipBody.setAttribute("fill", "white")
+                this.spaceShipBody.setAttribute("stroke", "orange")
+                }, 200);
+                setTimeout( () => {
+                    this.spaceShipBody.setAttribute("fill", "orange")
+                    this.spaceShipBody.setAttribute("stroke", "white")
+                }, 300);
+            setTimeout( () => {
+                this.spaceShipBody.setAttribute("fill", "white")
+                this.spaceShipBody.setAttribute("stroke", "orange")
+                resolve()
+                }, 400);
+            }
+        );
+    }
+
     engineAnimation(){
         let isYellow = true; 
 
@@ -115,16 +182,18 @@ class SpaceShip {
     }
 
     shootBullet(){
-        if (bullets.length < 3) {
-            new Bullet({ spaceShipPosition: this.position });
+        if (bullets.length < 30 && this.active) {
+            new Bullet({ spaceShipPosition: this.position, spaceShipAngle: this.angle});
         }
     }
 
     move() {
-        this.position.x += this.movement.x;
-        this.position.y += this.movement.y;
-        this.spaceShip.setAttribute("transform", 
-            `translate(${this.position.x}, ${this.position.y}) rotate(${this.angle} ,30, 40)`);
+        if(this.active){
+            this.position.x += this.movement.x;
+            this.position.y += this.movement.y;
+            this.spaceShip.setAttribute("transform", 
+                `translate(${this.position.x}, ${this.position.y}) rotate(${this.angle}, 30, 40)`);
+        }
     }
 }
 
@@ -191,14 +260,15 @@ class Asteroid {
         gameArea.appendChild(this.asteroid);
     }
 
-    move() {
+    async move() {
         this.position.y += this.speed;
         this.asteroid.setAttribute("transform", `translate(${this.position.x}, ${this.position.y})`);
         
         const hit = () => {
             for(const bullet of bullets){
-                const dx = bullet.position.x1 - this.position.x;
-                const dy = bullet.position.y1 - this.position.y;
+                const A = bullet.getCoordinates();
+                const dx = A.Ax - this.position.x;
+                const dy = A.Ay - this.position.y;
                 const distance = Math.sqrt(dx * dx + dy * dy);
                 if(distance < this.radius)
                     return bullet;
@@ -207,9 +277,45 @@ class Asteroid {
         }
         const bulletHit = hit();
 
+        const hitSpaceShip = () => {
+            //"points", "30,-15 ; 10,40 ; 50,40"
+
+            const dx1 = spaceShip.position.x + 30 - this.position.x;
+            const dy1 = spaceShip.position.y - 15 - this.position.y;
+            const distance1 = Math.sqrt(dx1 * dx1 + dy1 * dy1);
+            const dx2 = spaceShip.position.x + 10 - this.position.x;
+            const dy2 = spaceShip.position.y + 40 - this.position.y;
+            const distance2 = Math.sqrt(dx2 * dx2 + dy2 * dy2);
+            const dx3 = spaceShip.position.x + 50 - this.position.x;
+            const dy3 = spaceShip.position.y + 40 - this.position.y;
+            const distance3 = Math.sqrt(dx3 * dx3 + dy3 * dy3);
+
+            if(distance1 < this.radius || distance2 < this.radius || distance3 < this.radius)
+                return true;
+            return false;
+        }
+        const spaceShipHit = hitSpaceShip();
+
         if(this.position.y >= 800 && this.asteroid.parentNode === gameArea){
             asteroids.splice(asteroids.indexOf(this), 1);
             gameArea.removeChild(this.asteroid);
+        }
+        else if(spaceShipHit && spaceShip.spaceShip.parentNode === gameArea && spaceShip.active){
+            spaceShip.lifes--;
+            gameArea.removeChild(this.asteroid);
+
+            if(!spaceShip.lifes){
+                spaceShip.active = false;
+                await spaceShip.damagedAnimation();
+                await spaceShip.damagedAnimation();
+                await spaceShip.damagedAnimation();
+                gameArea.removeChild(spaceShip.spaceShip);
+                stopSpawning();
+                gameOver();
+            }
+            else{
+                spaceShip.damagedAnimation();
+            }
         }
         else if(bulletHit){
             gameArea.removeChild(this.asteroid);
@@ -242,42 +348,47 @@ class Asteroid {
     }
 }
 
+let spawningIntervals = [];
 function spawnAsteroids(){
-    setInterval(() => {
+    spawningIntervals.push(setInterval(() => {
         const asteroid = new Asteroid({
             position: { x: 100 + Math.random() * window.innerWidth, y: -100}, 
             level: 4
         });
         asteroids.push(asteroid);
         asteroid.move();
-    }, 3000);
+    }, 3000));
     
-    setInterval(() => {
+    spawningIntervals.push(setInterval(() => {
         const asteroid = new Asteroid({
             position: { x: 100 + Math.random() * window.innerWidth, y: -100}, 
             level: 3
         });        
         asteroids.push(asteroid);
         asteroid.move();
-    }, 2000);
+    }, 2000));
     
-    setInterval(() => {
+    spawningIntervals.push(setInterval(() => {
         const asteroid = new Asteroid({
             position: { x: 100 + Math.random() * window.innerWidth, y: -100}, 
             level: 2
         });    
         asteroids.push(asteroid);
         asteroid.move();
-    }, 1500);
+    }, 1500));
     
-    setInterval(() => {
+    setInterval((() => {
         const asteroid = new Asteroid({
             position: { x: 100 + Math.random() * window.innerWidth, y: -100}, 
             level: 1
         });
         asteroids.push(asteroid);
         asteroid.move();
-    }, 1000);
+    }, 1000));
+}
+function stopSpawning() {
+    spawningIntervals.forEach(interval => clearInterval(interval));
+    spawningIntervals = [];
 }
 
 spawnAsteroids();
