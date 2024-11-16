@@ -70,6 +70,20 @@ class Bullet{
         console.log(this.angle);
         this.bullet.setAttribute("transform", `rotate(${this.angle},${this.position.x2}, ${this.position.y2})`);
 
+        const ctm = this.bullet.getCTM();
+        const a = ctm.a;
+        const b = ctm.b;
+        const c = ctm.c;
+        const d = ctm.d;
+        const e = ctm.e;
+        const f = ctm.f;
+        console.log("a ", a);
+        console.log("b ", b);
+        console.log("c ", c);
+        console.log("d ", d);
+        console.log("e ", e);
+        console.log("f ", f);
+
         bullets.push(this);
         gameArea.appendChild(this.bullet);
         
@@ -92,19 +106,6 @@ class Bullet{
 
         requestAnimationFrame(moveBullet);
     }
-    /*
-    getCoordinates() {
-         const radians = this.angle * (Math.PI / 180); 
-         const x1 = this.position.x1; 
-         const y1 = this.position.y1; 
-         const x2 = this.position.x2; 
-         const y2 = this.position.y2; 
-
-         const x1P = x2 + (x1 - x2) * Math.cos(radians) - (y1 - y2) * Math.sin(radians); 
-         const y1P = y2 + (x1 - x2) * Math.sin(radians) + (y1 - y2) * Math.cos(radians); 
-         return { Ax: x1P, Ay: y1P }; 
-    }
-    */
 }
 
 class SpaceShip {
@@ -266,9 +267,8 @@ class Asteroid {
         
         const hit = () => {
             for(const bullet of bullets){
-                const A = bullet.getCoordinates();
-                const dx = A.Ax - this.position.x;
-                const dy = A.Ay - this.position.y;
+                const dx = bullet.position.x1 - this.position.x;
+                const dy = bullet.position.y1 - this.position.y;
                 const distance = Math.sqrt(dx * dx + dy * dy);
                 if(distance < this.radius)
                     return bullet;
