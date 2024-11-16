@@ -67,27 +67,14 @@ class Bullet{
         this.bullet.setAttribute('y1', this.position.y1);
         this.bullet.setAttribute('x2', this.position.x2);
         this.bullet.setAttribute('y2', this.position.y2);
-        console.log(this.angle);
-        this.bullet.setAttribute("transform", `rotate(${this.angle},${this.position.x2}, ${this.position.y2})`);
 
-        const ctm = this.bullet.getCTM();
-        const a = ctm.a;
-        const b = ctm.b;
-        const c = ctm.c;
-        const d = ctm.d;
-        const e = ctm.e;
-        const f = ctm.f;
-        console.log("a ", a);
-        console.log("b ", b);
-        console.log("c ", c);
-        console.log("d ", d);
-        console.log("e ", e);
-        console.log("f ", f);
+        this.bullet.setAttribute("transform", `rotate(${this.angle},${this.position.x2}, ${this.position.y2})`);
 
         bullets.push(this);
         gameArea.appendChild(this.bullet);
         
         const moveBullet = () => {
+
             this.position.y1 -= 4;
             this.position.y2 -= 4;
     
@@ -95,6 +82,7 @@ class Bullet{
             this.bullet.setAttribute("y1", this.position.y1);
             this.bullet.setAttribute("x2", this.position.x2);
             this.bullet.setAttribute("y2", this.position.y2);
+
     
             if (this.position.y2 < 0 && this.bullet.parentNode === gameArea) {
                 gameArea.removeChild(this.bullet);
@@ -105,6 +93,16 @@ class Bullet{
         }
 
         requestAnimationFrame(moveBullet);
+    }
+
+    getRealCoord(){
+        const ctm = this.bullet.getScreenCTM();
+        let bulletPoint = this.bullet.ownerSVGElement.createSVGPoint();
+        bulletPoint.x = this.position.x1;
+        bulletPoint.y = this.position.y1;
+        const bulletPointModified = bulletPoint.matrixTransform(ctm);
+
+        return bulletPointModified;
     }
 }
 
@@ -266,15 +264,19 @@ class Asteroid {
         this.asteroid.setAttribute("transform", `translate(${this.position.x}, ${this.position.y})`);
         
         const hit = () => {
-            for(const bullet of bullets){
-                const dx = bullet.position.x1 - this.position.x;
-                const dy = bullet.position.y1 - this.position.y;
+            for (const bullet of bullets) {
+                const coord = bullet.getRealCoord();
+                const dx = coord.x - this.position.x;
+                const dy = coord.y - this.position.y;
                 const distance = Math.sqrt(dx * dx + dy * dy);
-                if(distance < this.radius)
-                    return bullet;
+        
+                if (distance < this.radius) {
+                    return bullet; // Collision detected
+                }
             }
-            return null;
-        }
+            return null; // No collision
+        };
+
         const bulletHit = hit();
 
         const hitSpaceShip = () => {
