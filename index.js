@@ -9,7 +9,7 @@ const keys = {
 
 gameArea.style.background = "black";
 gameArea.setAttribute("width", window.innerWidth);
-gameArea.setAttribute("height", window.innerHeight);
+gameArea.setAttribute("height", window.innerHeight + 100);
 
 let score = 0;
 const scoreDisplay = document.createElementNS("http://www.w3.org/2000/svg", "text");
@@ -21,6 +21,18 @@ scoreDisplay.setAttribute("y", window.innerHeight / 10);
 gameArea.appendChild(scoreDisplay);
 
 const scoreInterval = setInterval( () => scoreDisplay.textContent = `Score: ${score}`, 100 );
+
+const lifes = [];
+for(let i = 0; i < 3; i++){
+    const heart = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    heart.setAttribute("x", 15 + 15 * i * 2);
+    heart.setAttribute("y", window.innerHeight - 30);
+    heart.setAttribute("font-size", 25);
+
+    heart.textContent = "💛";
+    lifes.push(heart);
+    gameArea.appendChild(lifes[i]);
+}
 
 function gameOver(){
     clearInterval(scoreInterval);
@@ -60,7 +72,7 @@ class Bullet{
             x1: spaceShipPosition.x + 30,
             y1: spaceShipPosition.y,
             x2: spaceShipPosition.x + 30, 
-            y2: spaceShipPosition.y + 40 
+            y2: spaceShipPosition.y + 21
         };
 
         this.bullet.setAttribute('x1', this.position.x1);
@@ -83,7 +95,6 @@ class Bullet{
             this.bullet.setAttribute("x2", this.position.x2);
             this.bullet.setAttribute("y2", this.position.y2);
 
-    
             if (this.position.y2 < 0 && this.bullet.parentNode === gameArea) {
                 gameArea.removeChild(this.bullet);
                 bullets.splice(bullets.indexOf(this), 1); 
@@ -97,7 +108,7 @@ class Bullet{
 
     getRealCoord(){
         const ctm = this.bullet.getScreenCTM();
-        let bulletPoint = this.bullet.ownerSVGElement.createSVGPoint();
+        const bulletPoint = this.bullet.ownerSVGElement.createSVGPoint();
         bulletPoint.x = this.position.x1;
         bulletPoint.y = this.position.y1;
         const bulletPointModified = bulletPoint.matrixTransform(ctm);
@@ -121,6 +132,7 @@ class SpaceShip {
     initialize() {
         this.spaceShipBody = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
         this.spaceShipBody.setAttribute("points", "30,-15 10,40 50,40");
+        //tip(30,-15); left(10,40); right(50,40)
         this.spaceShipBody.setAttribute("fill", this.color.fill);
         this.spaceShipBody.setAttribute("stroke", this.color.stroke);
         this.spaceShipBody.setAttribute("stroke-width", "5");
@@ -135,10 +147,17 @@ class SpaceShip {
         this.rocketWindow.setAttribute("r", "10");
         this.rocketWindow.setAttribute("fill", "cyan");
         this.rocketWindow.setAttribute("cx", "30");
-        this.rocketWindow.setAttribute("cy", "25");
+        this.rocketWindow.setAttribute("cy", "26");
+
+        this.gun = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        this.gun.setAttribute("r", "4");
+        this.gun.setAttribute("fill", "grey");
+        this.gun.setAttribute("cx", "30");
+        this.gun.setAttribute("cy", "15");
 
         this.spaceShip.appendChild(this.spaceShipBody);
         this.spaceShip.appendChild(this.fire);
+        this.spaceShip.appendChild(this.gun);
         this.spaceShip.appendChild(this.rocketWindow);
 
         gameArea.appendChild(this.spaceShip);
@@ -181,7 +200,7 @@ class SpaceShip {
     }
 
     shootBullet(){
-        if (bullets.length < 30 && this.active) {
+        if (bullets.length < 3 && this.active) {
             new Bullet({ spaceShipPosition: this.position, spaceShipAngle: this.angle});
         }
     }
@@ -191,8 +210,32 @@ class SpaceShip {
             this.position.x += this.movement.x;
             this.position.y += this.movement.y;
             this.spaceShip.setAttribute("transform", 
-                `translate(${this.position.x}, ${this.position.y}) rotate(${this.angle}, 30, 40)`);
+                `translate(${this.position.x}, ${this.position.y}) rotate(${this.angle}, 30, 21)`);
         }
+    }
+
+    getSpaceShipPoints(){
+        //"30,-15 10,40 50,40";
+        if (!this.spaceShipBody.ownerSVGElement) 
+            return [];
+
+        const ctm = this.spaceShipBody.getScreenCTM();
+        const tip = this.spaceShipBody.ownerSVGElement.createSVGPoint();
+        tip.x = 30; 
+        tip.y = -15;
+        const tipFinal = tip.matrixTransform(ctm);
+
+        const left = this.spaceShipBody.ownerSVGElement.createSVGPoint();
+        left.x = 10;
+        left.y = 40;
+        const leftFinal = left.matrixTransform(ctm);
+
+        const right = this.spaceShipBody.ownerSVGElement.createSVGPoint();
+        right.x = 50;
+        right.y = 40;
+        const rightFinal = right.matrixTransform(ctm);
+
+        return [tipFinal, leftFinal, rightFinal];
     }
 }
 
@@ -274,26 +317,22 @@ class Asteroid {
                     return bullet; // Collision detected
                 }
             }
-            return null; // No collision
+            return null; 
         };
 
         const bulletHit = hit();
 
         const hitSpaceShip = () => {
-            //"points", "30,-15 ; 10,40 ; 50,40"
+            const points = spaceShip.getSpaceShipPoints();
 
-            const dx1 = spaceShip.position.x + 30 - this.position.x;
-            const dy1 = spaceShip.position.y - 15 - this.position.y;
-            const distance1 = Math.sqrt(dx1 * dx1 + dy1 * dy1);
-            const dx2 = spaceShip.position.x + 10 - this.position.x;
-            const dy2 = spaceShip.position.y + 40 - this.position.y;
-            const distance2 = Math.sqrt(dx2 * dx2 + dy2 * dy2);
-            const dx3 = spaceShip.position.x + 50 - this.position.x;
-            const dy3 = spaceShip.position.y + 40 - this.position.y;
-            const distance3 = Math.sqrt(dx3 * dx3 + dy3 * dy3);
+            for(let point of points){
+                const dx = point.x - this.position.x;
+                const dy = point.y - this.position.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                if(distance < this.radius)
+                    return true;
+            }
 
-            if(distance1 < this.radius || distance2 < this.radius || distance3 < this.radius)
-                return true;
             return false;
         }
         const spaceShipHit = hitSpaceShip();
@@ -304,6 +343,7 @@ class Asteroid {
         }
         else if(spaceShipHit && spaceShip.spaceShip.parentNode === gameArea && spaceShip.active){
             spaceShip.lifes--;
+            gameArea.removeChild(lifes.pop());
             gameArea.removeChild(this.asteroid);
 
             if(!spaceShip.lifes){
