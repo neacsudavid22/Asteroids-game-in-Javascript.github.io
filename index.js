@@ -108,12 +108,15 @@ class Bullet{
 
     getRealCoord(){
         const ctm = this.bullet.getScreenCTM();
-        const bulletPoint = this.bullet.ownerSVGElement.createSVGPoint();
-        bulletPoint.x = this.position.x1;
-        bulletPoint.y = this.position.y1;
-        const bulletPointModified = bulletPoint.matrixTransform(ctm);
-
-        return bulletPointModified;
+        const bulletPoint1 = this.bullet.ownerSVGElement.createSVGPoint();
+        bulletPoint1.x = this.position.x1;
+        bulletPoint1.y = this.position.y1;
+        const bulletPoint2 = this.bullet.ownerSVGElement.createSVGPoint();
+        bulletPoint2.x = this.position.x2;
+        bulletPoint2.y = this.position.y2;
+        const bulletPoint1Modified = bulletPoint1.matrixTransform(ctm);
+        const bulletPoint2Modified = bulletPoint1.matrixTransform(ctm);
+        return [bulletPoint1Modified, bulletPoint2Modified];
     }
 }
 
@@ -404,11 +407,15 @@ class Asteroid {
         const hit = () => {
             for (const bullet of bullets) {
                 const coord = bullet.getRealCoord();
-                const dx = coord.x - this.position.x;
-                const dy = coord.y - this.position.y;
-                const distance = Math.sqrt(dx * dx + dy * dy);
+                const dx1 = coord[0].x - this.position.x;
+                const dy1 = coord[0].y - this.position.y;
+                const distance1 = Math.sqrt(dx1 * dx1 + dy1 * dy1);
+
+                const dx2 = coord[1].x - this.position.x;
+                const dy2 = coord[1].y - this.position.y;
+                const distance2 = Math.sqrt(dx2 * dx2 + dy2 * dy2);
         
-                if (distance < this.radius) 
+                if (distance1 < this.radius || distance2 < this.radius) 
                     return bullet; // Collision detected
 
             }
