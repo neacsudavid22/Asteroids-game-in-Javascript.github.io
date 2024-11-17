@@ -9,7 +9,7 @@ const keys = {
 
 gameArea.style.background = "black";
 gameArea.setAttribute("width", window.innerWidth);
-gameArea.setAttribute("height", window.innerHeight + 100);
+gameArea.setAttribute("height", window.innerHeight);
 
 let score = 0;
 const scoreDisplay = document.createElementNS("http://www.w3.org/2000/svg", "text");
@@ -21,18 +21,6 @@ scoreDisplay.setAttribute("y", window.innerHeight / 10);
 gameArea.appendChild(scoreDisplay);
 
 const scoreInterval = setInterval( () => scoreDisplay.textContent = `Score: ${score}`, 100 );
-
-const lifes = [];
-for(let i = 0; i < 3; i++){
-    const heart = document.createElementNS("http://www.w3.org/2000/svg", "text");
-    heart.setAttribute("x", 15 + 15 * i * 2);
-    heart.setAttribute("y", window.innerHeight - 30);
-    heart.setAttribute("font-size", 25);
-
-    heart.textContent = "💛";
-    lifes.push(heart);
-    gameArea.appendChild(lifes[i]);
-}
 
 function gameOver(){
     clearInterval(scoreInterval);
@@ -54,10 +42,22 @@ function gameOver(){
     finalScore.setAttribute("y", window.innerHeight * 0.55);
     finalScore.setAttribute("text-anchor", "middle");
     finalScore.setAttribute("baseline-direction", "middle"); 
-    finalScore.textContent = `Your Score Was ${scoreDisplay.textContent}`;
+    finalScore.textContent = `Your Score Was ${score}`;
 
     gameArea.appendChild(finalText);
     gameArea.appendChild(finalScore);
+}
+
+const lifes = [];
+for(let i = 0; i < 3; i++){
+    const heart = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    heart.setAttribute("x", 15 + 15 * i * 2);
+    heart.setAttribute("y", window.innerHeight - 30);
+    heart.setAttribute("font-size", 25);
+
+    heart.textContent = "💛";
+    lifes.push(heart);
+    gameArea.appendChild(lifes[i]);
 }
 
 class Bullet{
@@ -95,7 +95,7 @@ class Bullet{
             this.bullet.setAttribute("x2", this.position.x2);
             this.bullet.setAttribute("y2", this.position.y2);
 
-            if (this.position.y2 < 0 && this.bullet.parentNode === gameArea) {
+            if (this.position.y2 < -200 && this.bullet.parentNode === gameArea) {
                 gameArea.removeChild(this.bullet);
                 bullets.splice(bullets.indexOf(this), 1); 
             } else {
@@ -264,15 +264,106 @@ function updatePosition() {
 
 updatePosition();
 
-class Asteroid {
+class Asteroid {    
+    constructor(level, {position, direction}) {
+        const index = Math.round(Math.random() * 3);
+
+        if(!position && !direction){
+            switch(index){
+                case 0:
+                    this.position = { 
+                        x: -200, 
+                        y: Math.random() * window.innerHeight / 2
+                    };
+                    this.direction = {
+                         horizontal: 1,
+                         vertical: Math.random() * 0.5
+                    };
+                    break;
+                case 1:
+                    this.position = { 
+                        x: -200,
+                        y: window.innerHeight/2 + Math.random() * window.innerHeight/2, 
+                    };
+                    this.direction = {
+                            horizontal: 1,
+                            vertical: Math.random() * 0.5
+                    };
+                    break;
+                case 2:
+                    this.position = { 
+                        x: Math.random() * window.innerWidth/2,
+                        y: window.innerHeight + 200
+                    };
+                    this.direction = {
+                            horizontal: Math.random() * 0.5,
+                            vertical:  - 1
+                    };
+                    break;
+                case 3:
+                    this.position = { 
+                        x: window.innerWidth/2 + Math.random() * window.innerWidth/2,
+                        y: window.innerHeight + 200
+                    };
+                    this.direction = {
+                            horizontal: -1 * Math.random() * 0.5,
+                            vertical: -1
+                    };
+                    break;
     
-    constructor({ position, level}) {
+                case 4:
+                    this.position = { 
+                        x: window.innerWidth + 200,
+                        y: window.innerHeight/2 + Math.random() * window.innerHeight/2
+                    };
+                    this.direction = {
+                            horizontal: -1,
+                            vertical: -1 * Math.random() * 0.5,
+                    };
+                    break;
+                case 5:
+                    this.position = { 
+                        x: window.innerWidth + 200,
+                        y: Math.random() * window.innerHeight/2
+                    };
+                    this.direction = {
+                            horizontal: 1,
+                            vertical: Math.random() * 0.5,
+                    };
+                    break;
+                case 6:
+                    this.position = { 
+                        x: window.innerWidth/2 + Math.random() * window.innerWidth/2,
+                        y: -200
+                    };
+                    this.direction = {
+                            horizontal: Math.random() * 0.5,
+                            vertical: -1
+                    };
+                    break;
+                case 7:
+                    this.position = { 
+                        x: Math.random() * window.innerWidth/2,
+                        y: -200
+                    };
+                    this.direction = {
+                            horizontal: -1 * Math.random() * 0.5,
+                            vertical: -1
+                    };
+                    break;
+            }
+        }
+        else{
+            this.position = { x: position.x, y: position.y };
+            this.direction = { horizontal: direction.horizontal, vertical: direction.vertical };
+        }
+
         const colors = ['green','orange','red','darkred'];
-        this.position = {x: position.x, y: position.y};
         this.level = level;
         this.color = colors[level-1];
         this.speed = 5.5 - level + Math.random();
         this.radius = this.level * 20;
+
         this.drawAsteroidCircle();
     }
 
@@ -299,11 +390,15 @@ class Asteroid {
         this.asteroid.appendChild(this.asteroidCircle);
         this.asteroid.appendChild(this.text);
 
-        gameArea.appendChild(this.asteroid);
+        if(this.direction.vertical !== 0 && this.direction.horizontal !== 0)
+            gameArea.appendChild(this.asteroid);
+        else 
+            asteroids.splice(asteroids.indexOf(this), 1);
     }
 
     async move() {
-        this.position.y += this.speed;
+        this.position.y += this.speed * this.direction.vertical;
+        this.position.x += this.speed * this.direction.horizontal;
         this.asteroid.setAttribute("transform", `translate(${this.position.x}, ${this.position.y})`);
         
         const hit = () => {
@@ -313,9 +408,9 @@ class Asteroid {
                 const dy = coord.y - this.position.y;
                 const distance = Math.sqrt(dx * dx + dy * dy);
         
-                if (distance < this.radius) {
+                if (distance < this.radius) 
                     return bullet; // Collision detected
-                }
+
             }
             return null; 
         };
@@ -337,7 +432,9 @@ class Asteroid {
         }
         const spaceShipHit = hitSpaceShip();
 
-        if(this.position.y >= 800 && this.asteroid.parentNode === gameArea){
+        if((this.position.y >= innerHeight + 500 || this.position.y < -500
+            || this.position.x >= innerWidth + 500 || this.position.x < -500)
+            && this.asteroid.parentNode === gameArea){
             asteroids.splice(asteroids.indexOf(this), 1);
             gameArea.removeChild(this.asteroid);
         }
@@ -364,7 +461,7 @@ class Asteroid {
             gameArea.removeChild(bulletHit.bullet);
             bullets.splice(bullets.indexOf(bulletHit), 1);
             if(this.level > 1){
-                const asteroidTemp = new Asteroid({position: this.position, level: this.level - 1});
+                const asteroidTemp = new Asteroid(this.level - 1, { position: this.position,direction: this.direction });
                 asteroidTemp.move();
             }
 
@@ -392,42 +489,32 @@ class Asteroid {
 
 let spawningIntervals = [];
 function spawnAsteroids(){
+    
     spawningIntervals.push(setInterval(() => {
-        const asteroid = new Asteroid({
-            position: { x: 100 + Math.random() * window.innerWidth, y: -100}, 
-            level: 4
-        });
+        const asteroid = new Asteroid(4, { position: undefined, direction: undefined});
         asteroids.push(asteroid);
         asteroid.move();
     }, 3000));
     
     spawningIntervals.push(setInterval(() => {
-        const asteroid = new Asteroid({
-            position: { x: 100 + Math.random() * window.innerWidth, y: -100}, 
-            level: 3
-        });        
+        const asteroid = new Asteroid(3, { position: undefined, direction: undefined});
         asteroids.push(asteroid);
         asteroid.move();
     }, 2000));
     
     spawningIntervals.push(setInterval(() => {
-        const asteroid = new Asteroid({
-            position: { x: 100 + Math.random() * window.innerWidth, y: -100}, 
-            level: 2
-        });    
+        const asteroid = new Asteroid(2, { position: undefined, direction: undefined});
         asteroids.push(asteroid);
         asteroid.move();
     }, 1500));
     
-    setInterval((() => {
-        const asteroid = new Asteroid({
-            position: { x: 100 + Math.random() * window.innerWidth, y: -100}, 
-            level: 1
-        });
+    spawningIntervals.push(setInterval(() => {
+        const asteroid = new Asteroid(1, { position: undefined, direction: undefined});
         asteroids.push(asteroid);
         asteroid.move();
     }, 1000));
 }
+
 function stopSpawning() {
     spawningIntervals.forEach(interval => clearInterval(interval));
     spawningIntervals = [];
