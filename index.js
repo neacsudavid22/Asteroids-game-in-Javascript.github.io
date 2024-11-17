@@ -22,8 +22,25 @@ gameArea.appendChild(scoreDisplay);
 
 const scoreInterval = setInterval( () => scoreDisplay.textContent = `Score: ${score}`, 100 );
 
+let timeCombo = Date.now();
+let combo = 1;
+
+const multiplier = document.createElementNS("http://www.w3.org/2000/svg", "text");
+multiplier.setAttribute("fill", "red");
+multiplier.setAttribute("font-size", 18);
+multiplier.setAttribute("font-family", "Arial");
+multiplier.setAttribute("x", window.innerWidth / 20);
+multiplier.setAttribute("y", window.innerHeight / 10 + 40);
+gameArea.appendChild(multiplier);
+
+const multiplierInterval = setInterval( () => {
+    if(Date.now() - timeCombo >= 3000) combo = 1;
+    multiplier.textContent = `Multiplier: x${combo.toPrecision(2)}`;
+}, 100 );
+
 function gameOver(){
     clearInterval(scoreInterval);
+    clearInterval(multiplierInterval)
     const finalText = document.createElementNS("http://www.w3.org/2000/svg", "text");
     finalText.setAttribute("fill", "white");
     finalText.setAttribute("font-size", 100);
@@ -122,6 +139,7 @@ class Bullet{
 
 class SpaceShip {
     constructor({ position, movement, color }) {
+        this.invulnerable = false;
         this.active = true;
         this.lifes = 3;
         this.position = { x: position.x, y: position.y };
@@ -171,6 +189,7 @@ class SpaceShip {
 
     damagedAnimation(){
         return new Promise((resolve) => {
+            spaceShip.invulnerable = true;
             setTimeout( () => {
                 this.spaceShipBody.setAttribute("fill", "orange")
                 this.spaceShipBody.setAttribute("stroke", "white")
@@ -214,6 +233,19 @@ class SpaceShip {
             this.position.y += this.movement.y;
             this.spaceShip.setAttribute("transform", 
                 `translate(${this.position.x}, ${this.position.y}) rotate(${this.angle}, 30, 21)`);
+        }
+
+        if ((this.position.y < -200 || this.position.x < -200 || 
+            this.position.y > window.innerHeight + 200|| this.position.x > window.innerWidth + 200) 
+            && this.spaceShip.parentNode === gameArea) {
+
+                gameArea.removeChild(this.spaceShip);
+                
+                for(let i = 0; i < this.lifes; i++)
+                    gameArea.removeChild(lifes.pop()); 
+                this.lifes = 0; 
+
+                gameOver();
         }
     }
 
@@ -260,7 +292,7 @@ const spaceShip = new SpaceShip({
 function updatePosition() {
     keys.w.pressed ? spaceShip.movement.y = -4 : keys.s.pressed ? spaceShip.movement.y = 4 : spaceShip.movement.y = 0;
     keys.a.pressed ? spaceShip.movement.x = -4 : keys.d.pressed ? spaceShip.movement.x = 4 : spaceShip.movement.x = 0;
-    keys.n.pressed ? spaceShip.angle -= 3 : keys.m.pressed ? spaceShip.angle += 3 : spaceShip.angle += 0;
+    keys.n.pressed ? spaceShip.angle -= 3.5 : keys.m.pressed ? spaceShip.angle += 3.5 : spaceShip.angle += 0;
     spaceShip.move();
     requestAnimationFrame(updatePosition);
 }
@@ -269,7 +301,7 @@ updatePosition();
 
 class Asteroid {    
     constructor(level, {position, direction}) {
-        const index = Math.round(Math.random() * 3);
+        const index = Math.round(Math.random() * 7);
 
         if(!position && !direction){
             switch(index){
@@ -330,7 +362,7 @@ class Asteroid {
                         y: Math.random() * window.innerHeight/2
                     };
                     this.direction = {
-                            horizontal: 1,
+                            horizontal: -1,
                             vertical: Math.random() * 0.5,
                     };
                     break;
@@ -340,8 +372,8 @@ class Asteroid {
                         y: -200
                     };
                     this.direction = {
-                            horizontal: Math.random() * 0.5,
-                            vertical: -1
+                            horizontal: -1 * Math.random() * 0.5,
+                            vertical: 1
                     };
                     break;
                 case 7:
@@ -350,8 +382,8 @@ class Asteroid {
                         y: -200
                     };
                     this.direction = {
-                            horizontal: -1 * Math.random() * 0.5,
-                            vertical: -1
+                            horizontal: Math.random() * 0.5,
+                            vertical: 1
                     };
                     break;
             }
@@ -399,6 +431,29 @@ class Asteroid {
             asteroids.splice(asteroids.indexOf(this), 1);
     }
 
+    destroyedAnimation(){
+        return new Promise((resolve) => {
+            setTimeout( () => {
+                this.asteroidCircle.setAttribute("fill", "grey")
+                this.asteroidCircle.setAttribute("stroke", "white")
+            }, 50);
+            setTimeout( () => {
+                this.asteroidCircle.setAttribute("fill", "black")
+                this.asteroidCircle.setAttribute("stroke", "white")
+            }, 100);
+            setTimeout( () => {
+                this.asteroidCircle.setAttribute("fill", "grey")
+                this.asteroidCircle.setAttribute("stroke", "white")
+            }, 150);
+            setTimeout( () => {
+                this.asteroidCircle.setAttribute("fill", "black")
+                this.asteroidCircle.setAttribute("stroke", "white")
+                resolve()
+            }, 200);
+            }
+        );
+    }
+
     async move() {
         this.position.y += this.speed * this.direction.vertical;
         this.position.x += this.speed * this.direction.horizontal;
@@ -421,7 +476,6 @@ class Asteroid {
             }
             return null; 
         };
-
         const bulletHit = hit();
 
         const hitSpaceShip = () => {
@@ -439,16 +493,17 @@ class Asteroid {
         }
         const spaceShipHit = hitSpaceShip();
 
-        if((this.position.y >= innerHeight + 500 || this.position.y < -500
-            || this.position.x >= innerWidth + 500 || this.position.x < -500)
+        if((this.position.y >= innerHeight + 600 || this.position.y < -600
+            || this.position.x >= innerWidth + 600 || this.position.x < -600)
             && this.asteroid.parentNode === gameArea){
             asteroids.splice(asteroids.indexOf(this), 1);
             gameArea.removeChild(this.asteroid);
         }
-        else if(spaceShipHit && spaceShip.spaceShip.parentNode === gameArea && spaceShip.active){
+        else if(spaceShipHit && spaceShip.spaceShip.parentNode === gameArea && spaceShip.active && !spaceShip.invulnerable){
             spaceShip.lifes--;
             gameArea.removeChild(lifes.pop());
             gameArea.removeChild(this.asteroid);
+            combo = 1;
 
             if(!spaceShip.lifes){
                 spaceShip.active = false;
@@ -460,33 +515,56 @@ class Asteroid {
                 gameOver();
             }
             else{
-                spaceShip.damagedAnimation();
+                await spaceShip.damagedAnimation();
+                await spaceShip.damagedAnimation();
+                spaceShip.invulnerable = false;
             }
         }
         else if(bulletHit){
-            gameArea.removeChild(this.asteroid);
+
             gameArea.removeChild(bulletHit.bullet);
             bullets.splice(bullets.indexOf(bulletHit), 1);
+
+            await this.destroyedAnimation();
+            gameArea.removeChild(this.asteroid);
+
             if(this.level > 1){
-                const asteroidTemp = new Asteroid(this.level - 1, { position: this.position,direction: this.direction });
+
+                const spaced = Math.abs(this.direction.horizontal) === 1 ?
+                 {x: 0, y: 1} : {x: 1, y: 0} 
+
+                const asteroidTemp = new Asteroid(this.level - 1, 
+                    { position: {x: this.position.x + this.radius * spaced.x * (0.4 + Math.random() * 0.4), 
+                        y: this.position.y + this.radius * (0.4 + Math.random() * 0.3) * spaced.y },
+                     direction: this.direction})
                 asteroidTemp.move();
+                const asteroidTemp2 = new Asteroid(this.level - 1, 
+                    { position: {x: this.position.x + this.radius * (0.4 + Math.random() * 0.3) * spaced.x * -1,
+                         y: this.position.y + this.radius * (0.4 + Math.random() * 0.3) * spaced.y * -1, },
+                    direction: this.direction});
+                asteroidTemp2.move();
             }
 
             switch(this.level){
                 case 1:
-                    score += 10;
+                    score += 10 * combo;
                     break;
                 case 2:
-                    score += 20;
+                    score += 20 * combo;
                     break;
                 case 3: 
-                    score += 50;
+                    score += 30 * combo;
                     break;
 
                 case 4: 
-                    score += 70;
+                    score += 40 * combo;
                     break;
             }
+
+            if(Date.now() - timeCombo < 3000) combo += 0.1;
+            else combo = 1;
+
+            timeCombo = Date.now();
 
             asteroids.splice(asteroids.indexOf(this), 1);
         }
