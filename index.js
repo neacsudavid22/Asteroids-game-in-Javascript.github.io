@@ -2,8 +2,8 @@ const gameArea = document.getElementById("game-area");
 let bullets = [];
 let asteroids = [];
 const keys = {
-    w: { pressed: false }, s: { pressed: false }, a: { pressed: false }, d: { pressed: false },
-    n: { pressed: false }, m: { pressed: false },
+    arrowUp: { pressed: false }, arrowDown: { pressed: false }, arrowLeft: { pressed: false }, arrowRight: { pressed: false },
+    z: { pressed: false }, c: { pressed: false },
     x: { pressed: false }
 };
 
@@ -40,7 +40,7 @@ const multiplierInterval = setInterval( () => {
 
 function gameOver(){
     clearInterval(scoreInterval);
-    clearInterval(multiplierInterval)
+    clearInterval(multiplierInterval);
     const finalText = document.createElementNS("http://www.w3.org/2000/svg", "text");
     finalText.setAttribute("fill", "white");
     finalText.setAttribute("font-size", 100);
@@ -290,9 +290,9 @@ const spaceShip = new SpaceShip({
 });
 
 function updatePosition() {
-    keys.w.pressed ? spaceShip.movement.y = -4 : keys.s.pressed ? spaceShip.movement.y = 4 : spaceShip.movement.y = 0;
-    keys.a.pressed ? spaceShip.movement.x = -4 : keys.d.pressed ? spaceShip.movement.x = 4 : spaceShip.movement.x = 0;
-    keys.n.pressed ? spaceShip.angle -= 3.5 : keys.m.pressed ? spaceShip.angle += 3.5 : spaceShip.angle += 0;
+    keys.arrowUp.pressed ? spaceShip.movement.y = -4 : keys.arrowDown.pressed ? spaceShip.movement.y = 4 : spaceShip.movement.y = 0;
+    keys.arrowLeft.pressed ? spaceShip.movement.x = -4 : keys.arrowRight.pressed ? spaceShip.movement.x = 4 : spaceShip.movement.x = 0;
+    keys.z.pressed ? spaceShip.angle -= 4 : keys.c.pressed ? spaceShip.angle += 4 : spaceShip.angle += 0;
     spaceShip.move();
     requestAnimationFrame(updatePosition);
 }
@@ -555,7 +555,6 @@ class Asteroid {
                 case 3: 
                     score += 30 * combo;
                     break;
-
                 case 4: 
                     score += 40 * combo;
                     break;
@@ -573,31 +572,28 @@ class Asteroid {
 }
 
 let spawningIntervals = [];
-function spawnAsteroids(){
-    
-    spawningIntervals.push(setInterval(() => {
-        const asteroid = new Asteroid(4, { position: undefined, direction: undefined});
-        asteroids.push(asteroid);
-        asteroid.move();
-    }, 3000));
-    
-    spawningIntervals.push(setInterval(() => {
-        const asteroid = new Asteroid(3, { position: undefined, direction: undefined});
-        asteroids.push(asteroid);
-        asteroid.move();
-    }, 2000));
-    
-    spawningIntervals.push(setInterval(() => {
-        const asteroid = new Asteroid(2, { position: undefined, direction: undefined});
-        asteroids.push(asteroid);
-        asteroid.move();
-    }, 1500));
-    
-    spawningIntervals.push(setInterval(() => {
-        const asteroid = new Asteroid(1, { position: undefined, direction: undefined});
-        asteroids.push(asteroid);
-        asteroid.move();
-    }, 1000));
+const levelSpec = [ 
+                [1.5, 2, 2.5 ,3], // level 1
+                [5, 5, 5 ,5], // level 2
+                [5, 5, 5 ,5], // level 3
+                [5, 5, 5 ,5], // level 4
+                [5, 5, 5 ,5], // level 5
+                [5, 5, 5 ,5], // level 6
+                [5, 5, 5 ,5], // level 7
+                [5, 5, 5 ,5], // level 8
+                [5, 5, 5 ,5], // level 9
+                [5, 5, 5 ,5], // level 10
+            ];
+
+function spawnAsteroids(level){
+    stopSpawning();
+    for(let i = 0; i < 3; i++){
+        spawningIntervals.push(setInterval(() => {
+            const asteroid = new Asteroid(i + 1, { position: undefined, direction: undefined});
+            asteroids.push(asteroid);
+            asteroid.move();
+        }, levelSpec[level][i] * 1000));
+    }
 }
 
 function stopSpawning() {
@@ -605,29 +601,30 @@ function stopSpawning() {
     spawningIntervals = [];
 }
 
-spawnAsteroids();
+spawnAsteroids(0);
 
 document.addEventListener('keydown', (event)=>{
     switch(event.code){
-        case "KeyW":
-            keys.w.pressed = true;
+        case "ArrowUp":
+            keys.arrowUp.pressed = true;
             break;
-        case "KeyS":
-            keys.s.pressed = true;
+        case "ArrowDown":
+            keys.arrowDown.pressed = true;
             break;
-        case "KeyA":
-            keys.a.pressed = true;
+        case "ArrowLeft":
+            keys.arrowLeft.pressed = true;
             break;
-        case "KeyD":
-            keys.d.pressed = true;
+        case "ArrowRight":
+            keys.arrowRight.pressed = true;
             break;
-        case "KeyN":
-            keys.n.pressed = true;
+        case "KeyZ":
+            keys.z.pressed = true;
             break;
-        case "KeyM":
-            keys.m.pressed = true;
+        case "KeyC":
+            keys.c.pressed = true;
             break;
         case "KeyX":
+            keys.x.pressed = true;
             spaceShip.shootBullet();
             break;
     }
@@ -635,23 +632,26 @@ document.addEventListener('keydown', (event)=>{
 
 document.addEventListener('keyup', (event)=>{
     switch(event.code){
-        case "KeyW":
-            keys.w.pressed = false;
+        case "ArrowUp":
+            keys.arrowUp.pressed = false;
             break;
-        case "KeyS":
-            keys.s.pressed = false;
+        case "ArrowDown":
+            keys.arrowDown.pressed = false;
             break;
-        case "KeyA":
-            keys.a.pressed = false;
+        case "ArrowLeft":
+            keys.arrowLeft.pressed = false;
             break;
-        case "KeyD":
-            keys.d.pressed = false;
+        case "ArrowRight":
+            keys.arrowRight.pressed = false;
             break;
-        case "KeyN":
-            keys.n.pressed = false;
+        case "KeyZ":
+            keys.z.pressed = false;
             break;
-        case "KeyM":
-            keys.m.pressed = false;
+        case "KeyC":
+            keys.c.pressed = false;
+            break;
+        case "KeyX":
+            keys.x.pressed = false;
             break;
     }
 });
