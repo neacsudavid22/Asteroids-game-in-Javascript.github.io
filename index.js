@@ -1,4 +1,9 @@
 const gameArea = document.getElementById("game-area");
+gameArea.style.background = "black";
+gameArea.setAttribute("width", window.innerWidth);
+gameArea.setAttribute("height", window.innerHeight);
+
+function startGame() {
 let bullets = [];
 let asteroids = [];
 const keys = {
@@ -7,35 +12,31 @@ const keys = {
     x: { pressed: false }
 };
 
-gameArea.style.background = "black";
-gameArea.setAttribute("width", window.innerWidth);
-gameArea.setAttribute("height", window.innerHeight);
-
 let score = 0;
 const scoreDisplay = document.createElementNS("http://www.w3.org/2000/svg", "text");
 scoreDisplay.setAttribute("fill", "white");
-scoreDisplay.setAttribute("font-size", 30);
-scoreDisplay.setAttribute("font-family", "Arial");
-scoreDisplay.setAttribute("x", window.innerWidth / 20);
+scoreDisplay.setAttribute("font-size", 40);
+scoreDisplay.setAttribute("font-family", "Anta");
+scoreDisplay.setAttribute("x", window.innerWidth * 0.03);
 scoreDisplay.setAttribute("y", window.innerHeight / 10);
 gameArea.appendChild(scoreDisplay);
 
-const scoreInterval = setInterval( () => scoreDisplay.textContent = `Score: ${score}`, 100 );
+const scoreInterval = setInterval( () => scoreDisplay.textContent = `Score: ${score.toFixed().split(".")}`, 100 );
 
 let timeCombo = Date.now();
 let combo = 1;
 
 const multiplier = document.createElementNS("http://www.w3.org/2000/svg", "text");
 multiplier.setAttribute("fill", "red");
-multiplier.setAttribute("font-size", 18);
-multiplier.setAttribute("font-family", "Arial");
-multiplier.setAttribute("x", window.innerWidth / 20);
+multiplier.setAttribute("font-size", 20);
+multiplier.setAttribute("font-family", "Anta");
+multiplier.setAttribute("x", window.innerWidth * 0.03);
 multiplier.setAttribute("y", window.innerHeight / 10 + 40);
 gameArea.appendChild(multiplier);
 
 const multiplierInterval = setInterval( () => {
     if(Date.now() - timeCombo >= 3000) combo = 1;
-    multiplier.textContent = `Multiplier: x${combo.toPrecision(2)}`;
+    multiplier.textContent = `Multiplier: x${combo.toFixed(2)}`;
 }, 100 );
 
 function gameOver(){
@@ -44,33 +45,62 @@ function gameOver(){
     const finalText = document.createElementNS("http://www.w3.org/2000/svg", "text");
     finalText.setAttribute("fill", "white");
     finalText.setAttribute("font-size", 100);
-    finalText.setAttribute("font-family", "Arial");
+    finalText.setAttribute("font-family", "Anta");
     finalText.setAttribute("x", window.innerWidth / 2);
-    finalText.setAttribute("y", window.innerHeight * 0.45);
+    finalText.setAttribute("y", window.innerHeight * 0.38);
     finalText.setAttribute("text-anchor", "middle");
-    finalText.setAttribute("baseline-direction", "middle");
+    finalText.setAttribute("alignment-baseline", "central");
 
     finalText.textContent = `GAME OVER!`;
     const finalScore = document.createElementNS("http://www.w3.org/2000/svg", "text");
     finalScore.setAttribute("fill", "white");
     finalScore.setAttribute("font-size", 40);
-    finalScore.setAttribute("font-family", "Arial");
+    finalScore.setAttribute("font-family", "Anta");
     finalScore.setAttribute("x", window.innerWidth / 2);
-    finalScore.setAttribute("y", window.innerHeight * 0.55);
+    finalScore.setAttribute("y", window.innerHeight * 0.50);
     finalScore.setAttribute("text-anchor", "middle");
-    finalScore.setAttribute("baseline-direction", "middle"); 
-    finalScore.textContent = `Your Score Was ${score}`;
+    finalScore.setAttribute("alignment-baseline", "central"); 
+    finalScore.textContent = `Your Score Was ${score.toFixed().split(".")}`;
 
     gameArea.appendChild(finalText);
     gameArea.appendChild(finalScore);
+
+    const pressEnter = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    pressEnter.setAttribute("fill", "white");
+    pressEnter.setAttribute("font-size", 50);
+    pressEnter.setAttribute("font-family", "Anta");
+    pressEnter.setAttribute("x", window.innerWidth / 2);
+    pressEnter.setAttribute("y", window.innerHeight * 0.60);
+    pressEnter.setAttribute("text-anchor", "middle");
+    pressEnter.setAttribute("alignment-baseline", "central"); 
+    pressEnter.textContent = "press enter to try again";
+
+    setTimeout( () => {
+        let a = 1;
+        gameArea.appendChild(pressEnter);
+        setInterval( 
+            () => {
+                a = 1 - a;
+                pressEnter.setAttribute("y", window.innerHeight * (0.60 + a / 100));
+            }, 400
+        );
+    }, 2000);
+
+    document.addEventListener("keydown", (event) => {
+        switch(event.code){
+            case "Enter":
+            location.reload();
+            break;
+        }
+    });
 }
 
 const lifes = [];
 for(let i = 0; i < 3; i++){
     const heart = document.createElementNS("http://www.w3.org/2000/svg", "text");
-    heart.setAttribute("x", 15 + 15 * i * 2);
-    heart.setAttribute("y", window.innerHeight - 30);
-    heart.setAttribute("font-size", 25);
+    heart.setAttribute("x", window.innerWidth * 0.02 + 18 * i * 2);
+    heart.setAttribute("y", window.innerHeight - 35);
+    heart.setAttribute("font-size", 30);
 
     heart.textContent = "💛";
     lifes.push(heart);
@@ -115,6 +145,7 @@ class Bullet{
             if (this.position.y2 < -200 && this.bullet.parentNode === gameArea) {
                 gameArea.removeChild(this.bullet);
                 bullets.splice(bullets.indexOf(this), 1); 
+                spaceShip.bulletCount.textContent = `${3 - bullets.length}`;
             } else {
                 requestAnimationFrame(moveBullet);
             }
@@ -170,6 +201,14 @@ class SpaceShip {
         this.rocketWindow.setAttribute("cx", "30");
         this.rocketWindow.setAttribute("cy", "26");
 
+        this.bulletCount = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        this.bulletCount.setAttribute("fill", "grey");
+        this.bulletCount.setAttribute("font-size", `${this.level * 10}`);
+        this.bulletCount.setAttribute("font-family", "Anta");
+        this.bulletCount.setAttribute("x", 25);
+        this.bulletCount.setAttribute("y", 32);
+        this.bulletCount.textContent = `${3 - bullets.length}`;
+
         this.gun = document.createElementNS("http://www.w3.org/2000/svg", "circle");
         this.gun.setAttribute("r", "4");
         this.gun.setAttribute("fill", "grey");
@@ -180,6 +219,7 @@ class SpaceShip {
         this.spaceShip.appendChild(this.fire);
         this.spaceShip.appendChild(this.gun);
         this.spaceShip.appendChild(this.rocketWindow);
+        this.spaceShip.appendChild(this.bulletCount);
 
         gameArea.appendChild(this.spaceShip);
  
@@ -224,6 +264,7 @@ class SpaceShip {
     shootBullet(){
         if (bullets.length < 3 && this.active) {
             new Bullet({ spaceShipPosition: this.position, spaceShipAngle: this.angle});
+            this.bulletCount.textContent = `${3 - bullets.length}`;
         }
     }
 
@@ -275,18 +316,9 @@ class SpaceShip {
 }
 
 const spaceShip = new SpaceShip({
-    position: {
-        x: window.innerWidth / 2,
-        y: window.innerHeight / 2
-    },
-    movement: {
-        x: 0,
-        y: 0
-    },
-    color: {
-        fill: "white",
-        stroke: "orange"
-    }
+    position: { x: window.innerWidth / 2, y: window.innerHeight / 2 },
+    movement: { x: 0, y: 0 },
+    color: { fill: "white", stroke: "orange" }
 });
 
 function updatePosition() {
@@ -397,7 +429,7 @@ class Asteroid {
         this.level = level;
         this.color = colors[level-1];
         this.speed = 5.5 - level + Math.random();
-        this.radius = this.level * 20;
+        this.radius = this.level * 20 + 5;
 
         this.drawAsteroidCircle();
     }
@@ -405,7 +437,6 @@ class Asteroid {
     drawAsteroidCircle() {
 
         this.asteroidCircle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-
         this.asteroidCircle.setAttribute("cx", 0);
         this.asteroidCircle.setAttribute("cy", 0);
         this.asteroidCircle.setAttribute("r", this.radius);
@@ -415,10 +446,10 @@ class Asteroid {
 
         this.text = document.createElementNS("http://www.w3.org/2000/svg", "text");
         this.text.setAttribute("fill", "white");
-        this.text.setAttribute("font-size", `${this.level * 16}`);
-        this.text.setAttribute("font-family", "Arial");
+        this.text.setAttribute("font-size", `${this.level * 18}`);
+        this.text.setAttribute("font-family", "Anta");
         this.text.setAttribute("text-anchor", "middle");
-        this.text.setAttribute("alignment-baseline", "middle");
+        this.text.setAttribute("alignment-baseline", "central");
         this.text.textContent = `${this.level}`;
 
         this.asteroid = document.createElementNS("http://www.w3.org/2000/svg", "g");
@@ -493,8 +524,8 @@ class Asteroid {
         }
         const spaceShipHit = hitSpaceShip();
 
-        if((this.position.y >= innerHeight + 600 || this.position.y < -600
-            || this.position.x >= innerWidth + 600 || this.position.x < -600)
+        if((this.position.y >= innerHeight + 300 || this.position.y < -300
+            || this.position.x >= innerWidth + 300 || this.position.x < -300)
             && this.asteroid.parentNode === gameArea){
             asteroids.splice(asteroids.indexOf(this), 1);
             gameArea.removeChild(this.asteroid);
@@ -524,6 +555,7 @@ class Asteroid {
 
             gameArea.removeChild(bulletHit.bullet);
             bullets.splice(bullets.indexOf(bulletHit), 1);
+            spaceShip.bulletCount.textContent = `${3 - bullets.length}`;
 
             await this.destroyedAnimation();
             gameArea.removeChild(this.asteroid);
@@ -587,7 +619,7 @@ const levelSpec = [
 
 function spawnAsteroids(level){
     stopSpawning();
-    for(let i = 0; i < 3; i++){
+    for(let i = 0; i < 4; i++){
         spawningIntervals.push(setInterval(() => {
             const asteroid = new Asteroid(i + 1, { position: undefined, direction: undefined});
             asteroids.push(asteroid);
@@ -655,3 +687,94 @@ document.addEventListener('keyup', (event)=>{
             break;
     }
 });
+
+}
+
+function menu(){
+    const start = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    start.setAttribute("fill", "white");
+    start.setAttribute("font-size", 60);
+    start.setAttribute("font-family", "Anta");
+    start.setAttribute("x", window.innerWidth * 0.5);
+    start.setAttribute("y", window.innerHeight * 0.4);
+    start.setAttribute("text-anchor", "middle");
+    start.setAttribute("baseline-direction", "central");
+    start.setAttribute("transform-origin", "center");
+
+    start.textContent = "Start";
+    gameArea.appendChild(start);
+
+    const enterYourName = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    enterYourName.setAttribute("fill", "white");
+    enterYourName.setAttribute("font-size", 40);
+    enterYourName.setAttribute("font-family", "Anta");
+    enterYourName.setAttribute("x", window.innerWidth * 0.5);
+    enterYourName.setAttribute("y", window.innerHeight * 0.5);
+    enterYourName.setAttribute("text-anchor", "middle");
+    enterYourName.setAttribute("baseline-direction", "central");
+    enterYourName.setAttribute("text-decoration", "underline");
+    enterYourName.setAttribute("transform-origin", "center");
+
+    enterYourName.textContent = "Enter Your Name";
+    gameArea.appendChild(enterYourName);
+
+    let pulseScale = 0.05;
+    const pulse = setInterval( () => { enterYourName.setAttribute("transform", `scale(${1 + pulseScale})`); pulseScale = 0.05 - pulseScale; }, 500 );
+    let name = 'name';
+
+    async function deniedName(){
+        return new Promise( (resolve) => {
+            setTimeout( () => enterYourName.setAttribute("x", window.innerWidth * 0.50 - 5) , 150); 
+            setTimeout( () => enterYourName.setAttribute("x", window.innerWidth * 0.50 + 10) , 220); 
+            setTimeout( () => { enterYourName.setAttribute("x", window.innerWidth * 0.50); resolve(); } , 300); 
+        });
+    }
+
+    async function pressedStart(){
+        return new Promise( (resolve) => {
+                setTimeout( () => {
+                    start.setAttribute("transform", `scale(0.99)`);
+                    start.setAttribute("y", window.innerHeight * 0.4 + 2);
+                }, 150);
+                setTimeout( () => {
+                    start.setAttribute("transform", `scale(1.0)`);
+                    start.setAttribute("y", window.innerHeight * 0.4);
+                }, 300);
+                setTimeout(resolve, 700);
+            }
+        );
+    }
+
+    async function accepted(){
+        return new Promise(()=>{
+            gameArea.removeChild(start); 
+            clearInterval(pulse); 
+            gameArea.removeChild(enterYourName);
+            setTimeout( () => startGame(), 1500);
+        });
+    }
+
+    start.addEventListener("click", async () => { 
+        await pressedStart();
+        if(name.length > 4) await accepted();
+        else await deniedName();
+    } );
+    
+    enterYourName.addEventListener("click", () => {
+        name = "|";
+        enterYourName.textContent = name;
+        document.addEventListener("keydown", (event) => {
+            if(event.key === 'Backspace'){
+                name = name.slice(0,-1);
+            }
+            else if( /^[a-zA-Z0-9]$/.test(event.key) && name.length < 15){
+                name = name.slice(0,-1) + event.key.toUpperCase() + "|";
+                console.log(name);
+            }
+            enterYourName.textContent = `${name}`;
+        })
+    });
+}
+
+
+document.addEventListener("DOMContentLoaded", menu);
