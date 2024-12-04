@@ -5,6 +5,31 @@ gameArea.setAttribute("height", window.innerHeight);
 
 let username = '';
 
+function getScores(){
+    let items = [];
+    for (let i = 0; i < window.localStorage.length; i++) {
+        const key = window.localStorage.key(i); 
+        const value = Number(window.localStorage.getItem(key)); 
+        items.push({ key, value }); 
+    }
+
+    items.sort((a,b) => b.value - a.value);
+    
+    window.localStorage.clear();
+    let limit = 0;
+    for(let item of items){
+        if(limit < 100){
+            window.localStorage.setItem(item.key, item.value);
+            limit++;
+        }
+        else break;
+    }
+    console.log(items);
+    console.log(window.localStorage);
+
+    return items;
+}
+
 function startGame() {
 let bullets = [];
 let asteroids = [];
@@ -43,27 +68,6 @@ const multiplierInterval = setInterval( () => {
 
 function gameOver(){
     window.localStorage.setItem(username, Math.floor(score));
-    let items = [];
-    for (let i = 0; i < window.localStorage.length; i++) {
-        const key = window.localStorage.key(i); 
-        const value = Number(window.localStorage.getItem(key)); 
-        items.push({ key, value }); 
-    }
-
-    items.sort((a,b) => a.value - b.value);
-    
-    window.localStorage.clear();
-    let limit = 0;
-    for(let item of items){
-        if(limit < 100){
-            window.localStorage.setItem(item.key, item.value);
-            limit++;
-        }
-        else break;
-    }
-
-    console.log(items);
-    console.log(window.localStorage);
     
     clearInterval(scoreInterval);
     clearInterval(multiplierInterval);
@@ -75,8 +79,8 @@ function gameOver(){
     finalText.setAttribute("y", window.innerHeight * 0.38);
     finalText.setAttribute("text-anchor", "middle");
     finalText.setAttribute("alignment-baseline", "central");
-
     finalText.textContent = `GAME OVER!`;
+
     const finalScore = document.createElementNS("http://www.w3.org/2000/svg", "text");
     finalScore.setAttribute("fill", "white");
     finalScore.setAttribute("font-size", 40);
@@ -201,7 +205,7 @@ class SpaceShip {
         this.position = { x: position.x, y: position.y };
         this.angle = 0; 
         this.movement = { x: movement.x, y: movement.y };
-        this.color = { stroke: color.stroke, fill: color.fill}
+        this.color = { stroke: color.stroke, fill: color.fill }
         this.spaceShip = document.createElementNS("http://www.w3.org/2000/svg", "g");
         this.initialize();
     }
@@ -349,7 +353,7 @@ const spaceShip = new SpaceShip({
 function updatePosition() {
     keys.arrowUp.pressed ? spaceShip.movement.y = -4 : keys.arrowDown.pressed ? spaceShip.movement.y = 4 : spaceShip.movement.y = 0;
     keys.arrowLeft.pressed ? spaceShip.movement.x = -4 : keys.arrowRight.pressed ? spaceShip.movement.x = 4 : spaceShip.movement.x = 0;
-    keys.z.pressed ? spaceShip.angle -= 4 : keys.c.pressed ? spaceShip.angle += 4 : spaceShip.angle += 0;
+    keys.z.pressed ? spaceShip.angle -= 4.5 : keys.c.pressed ? spaceShip.angle += 4.5 : spaceShip.angle += 0;
     spaceShip.move();
     requestAnimationFrame(updatePosition);
 }
@@ -450,7 +454,7 @@ class Asteroid {
             this.direction = { horizontal: direction.horizontal, vertical: direction.vertical };
         }
 
-        const colors = ['green','orange','red','darkred'];
+        const colors = ['gray','orange','red','darkred'];
         this.level = level;
         this.color = colors[level-1];
         this.speed = 5.5 - level + Math.random();
@@ -717,9 +721,57 @@ document.addEventListener('keyup', (event)=>{
 
 function menu(){
     console.log(window.localStorage);
-    //window.localStorage.clear();
+
+    const leaderBoard = document.createElementNS("http://www.w3.org/2000/svg", "g");
+
+    let items = getScores();
+    let pos = 1;
+    const scoreTitle = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    scoreTitle.setAttribute("fill", "white");
+    scoreTitle.setAttribute("font-size", 20);
+    scoreTitle.setAttribute("font-family", "Anta");
+    scoreTitle.setAttribute("x", window.innerWidth * 0.02);
+    scoreTitle.setAttribute("y", window.innerHeight * 0.07);
+    scoreTitle.setAttribute("text-anchor", "begining");
+    scoreTitle.setAttribute("baseline-direction", "left");
+    scoreTitle.setAttribute("text-decoration", "underline");
+    scoreTitle.textContent = "Leaderboard";
+    
+    leaderBoard.appendChild(scoreTitle);
+
+    let limit = 0;
+    for(let item of items){
+        const itemText = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        itemText.setAttribute("fill", "white");
+        itemText.setAttribute("font-size", 14);
+        itemText.setAttribute("font-family", "Anta");
+        itemText.setAttribute("x", window.innerWidth * 0.02);
+        itemText.setAttribute("y", window.innerHeight * (0.08 + 0.03 * pos));
+        itemText.setAttribute("text-anchor", "begining");
+        itemText.setAttribute("baseline-direction", "left");
+        itemText.textContent = `${pos}. ${item.key} - ${item.value}`;
+        pos++;
+        leaderBoard.appendChild(itemText);
+
+        limit++;
+        if(limit === 10) break;
+    }
+    gameArea.appendChild(leaderBoard);
+
+    const intructions = document.createElementNS("http://www.w3.org/2000/svg", "text");
+
+    intructions.setAttribute("fill", "white");
+    intructions.setAttribute("font-size", 20);
+    intructions.setAttribute("font-family", "Anta");
+    intructions.setAttribute("x", window.innerWidth * 0.5);
+    intructions.setAttribute("y", window.innerHeight * 0.95);
+    intructions.setAttribute("text-anchor", "middle");
+    intructions.setAttribute("baseline-direction", "central");
+    intructions.textContent = "arrows - move,  z - rotation left,  c - rotation right,  x - fire  (max 3 bullets on screen)";
+    gameArea.appendChild(intructions);
     
     const start = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    start.setAttribute("id", "pointer");
     start.setAttribute("fill", "white");
     start.setAttribute("font-size", 60);
     start.setAttribute("font-family", "Anta");
@@ -733,6 +785,7 @@ function menu(){
     gameArea.appendChild(start);
 
     const enterYourName = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    enterYourName.setAttribute("id", "pointer");
     enterYourName.setAttribute("fill", "white");
     enterYourName.setAttribute("font-size", 40);
     enterYourName.setAttribute("font-family", "Anta");
@@ -750,19 +803,21 @@ function menu(){
     const pulse = setInterval( () => { enterYourName.setAttribute("transform", `scale(${1 + pulseScale})`); pulseScale = 0.05 - pulseScale; }, 500 );
     let name = '';
 
-    async function nameTooShort(nameTyped){
+    async function nameTooShort(){
         return new Promise( (resolve) => {
-            setTimeout( () => enterYourName.textContent = nameTyped ? 'Name too short!' : 'Enter your name!'); 
-            setTimeout( () => enterYourName.setAttribute("x", window.innerWidth * 0.50 + 10) , 220); 
-            setTimeout( () => { enterYourName.setAttribute("x", window.innerWidth * 0.50); resolve(); } , 300); 
+            setTimeout( () => enterYourName.textContent = 'Name too short', 100); 
+            setTimeout( () => enterYourName.setAttribute("x", window.innerWidth * 0.50 - 10) , 180); 
+            setTimeout( () => enterYourName.setAttribute("x", window.innerWidth * 0.50 + 10) , 240); 
+            setTimeout( () => { enterYourName.setAttribute("x", window.innerWidth * 0.50); name=''; resolve(); } , 320); 
         });
     }
 
     async function nameAlreadyUsed(){
         return new Promise( (resolve) => {
-            setTimeout( () => enterYourName.textContent = 'Name already used!', 150); 
-            setTimeout( () => enterYourName.setAttribute("x", window.innerWidth * 0.50 + 10) , 220); 
-            setTimeout( () => { enterYourName.setAttribute("x", window.innerWidth * 0.50); name=''; resolve(); } , 300); 
+            setTimeout( () => enterYourName.textContent = 'Name Already Used', 100); 
+            setTimeout( () => enterYourName.setAttribute("x", window.innerWidth * 0.50 - 10) , 180); 
+            setTimeout( () => enterYourName.setAttribute("x", window.innerWidth * 0.50 + 10) , 240); 
+            setTimeout( () => { enterYourName.setAttribute("x", window.innerWidth * 0.50); name=''; resolve(); } , 320); 
         });
     }
 
@@ -782,33 +837,45 @@ function menu(){
     }
 
     async function accepted(){
-        return new Promise(()=>{
+        return new Promise( () => {
             clearInterval(pulse); 
             if(start.parentNode === gameArea) gameArea.removeChild(start); 
             if(enterYourName.parentNode === gameArea) gameArea.removeChild(enterYourName);
+            if(leaderBoard.parentNode === gameArea) gameArea.removeChild(leaderBoard); 
             username = name.slice(0, name.length - 1);
-            setTimeout( () => startGame(), 1500);
+            setTimeout(() => startGame(), 1500);
         });
     }
 
-    let nameTyped = false;
     start.addEventListener("click", async () => { 
-        if(!name) nameTyped = false;
         await pressedStart();
         if (window.localStorage.getItem(name.slice(0, name.length - 1))) await nameAlreadyUsed();
-        else if(name.length < 4) await nameTooShort(nameTyped);
+        else if(name.length < 4) await nameTooShort();
         else await accepted();
-    } );
+    });
+
+    let enter = false;
+    document.addEventListener("keydown", async (event) => {
+        if(!enter){
+            if(event.key === 'Enter') {
+                await pressedStart();
+                if (window.localStorage.getItem(name.slice(0, name.length - 1))) await nameAlreadyUsed();
+                else if(name.length < 4) await nameTooShort();
+                else await accepted();
+                enter = true;
+            }
+        }
+    });
     
     let listening = false;
     enterYourName.addEventListener("click", () => {
         name = "|";
         enterYourName.textContent = name;
-        if (!listening) { // Check if the listener has already been added
+        if (!listening) { 
             listening = true;
             document.addEventListener("keydown", (event) => {
                 if(event.key === 'Backspace'){
-                    name = name.slice(0,-1);
+                    name = name.slice(0,-2) + "|";
                 }
                 else if( /^[a-zA-Z0-9]$/.test(event.key) && name.length < 15){
                     name = name.slice(0,-1) + event.key.toUpperCase() + "|";
@@ -818,6 +885,5 @@ function menu(){
         }
     });
 }
-
 
 document.addEventListener("DOMContentLoaded", menu);
