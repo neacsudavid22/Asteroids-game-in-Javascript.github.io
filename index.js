@@ -3,6 +3,8 @@ gameArea.style.background = "black";
 gameArea.setAttribute("width", window.innerWidth);
 gameArea.setAttribute("height", window.innerHeight);
 
+let username = '';
+
 function startGame() {
 let bullets = [];
 let asteroids = [];
@@ -40,6 +42,29 @@ const multiplierInterval = setInterval( () => {
 }, 100 );
 
 function gameOver(){
+    window.localStorage.setItem(username, Math.floor(score));
+    let items = [];
+    for (let i = 0; i < window.localStorage.length; i++) {
+        const key = window.localStorage.key(i); 
+        const value = Number(window.localStorage.getItem(key)); 
+        items.push({ key, value }); 
+    }
+
+    items.sort((a,b) => a.value - b.value);
+    
+    window.localStorage.clear();
+    let limit = 0;
+    for(let item of items){
+        if(limit < 100){
+            window.localStorage.setItem(item.key, item.value);
+            limit++;
+        }
+        else break;
+    }
+
+    console.log(items);
+    console.log(window.localStorage);
+    
     clearInterval(scoreInterval);
     clearInterval(multiplierInterval);
     const finalText = document.createElementNS("http://www.w3.org/2000/svg", "text");
@@ -60,7 +85,7 @@ function gameOver(){
     finalScore.setAttribute("y", window.innerHeight * 0.50);
     finalScore.setAttribute("text-anchor", "middle");
     finalScore.setAttribute("alignment-baseline", "central"); 
-    finalScore.textContent = `Your Score Was ${score.toFixed().split(".")}`;
+    finalScore.textContent = `Your Score ${username} Was ${Math.floor(score)}`;
 
     gameArea.appendChild(finalText);
     gameArea.appendChild(finalScore);
@@ -691,6 +716,9 @@ document.addEventListener('keyup', (event)=>{
 }
 
 function menu(){
+    console.log(window.localStorage);
+    //window.localStorage.clear();
+    
     const start = document.createElementNS("http://www.w3.org/2000/svg", "text");
     start.setAttribute("fill", "white");
     start.setAttribute("font-size", 60);
@@ -720,13 +748,21 @@ function menu(){
 
     let pulseScale = 0.05;
     const pulse = setInterval( () => { enterYourName.setAttribute("transform", `scale(${1 + pulseScale})`); pulseScale = 0.05 - pulseScale; }, 500 );
-    let name = 'name';
+    let name = '';
 
-    async function deniedName(){
+    async function nameTooShort(nameTyped){
         return new Promise( (resolve) => {
-            setTimeout( () => enterYourName.setAttribute("x", window.innerWidth * 0.50 - 5) , 150); 
+            setTimeout( () => enterYourName.textContent = nameTyped ? 'Name too short!' : 'Enter your name!'); 
             setTimeout( () => enterYourName.setAttribute("x", window.innerWidth * 0.50 + 10) , 220); 
             setTimeout( () => { enterYourName.setAttribute("x", window.innerWidth * 0.50); resolve(); } , 300); 
+        });
+    }
+
+    async function nameAlreadyUsed(){
+        return new Promise( (resolve) => {
+            setTimeout( () => enterYourName.textContent = 'Name already used!', 150); 
+            setTimeout( () => enterYourName.setAttribute("x", window.innerWidth * 0.50 + 10) , 220); 
+            setTimeout( () => { enterYourName.setAttribute("x", window.innerWidth * 0.50); name=''; resolve(); } , 300); 
         });
     }
 
@@ -747,32 +783,39 @@ function menu(){
 
     async function accepted(){
         return new Promise(()=>{
-            gameArea.removeChild(start); 
             clearInterval(pulse); 
-            gameArea.removeChild(enterYourName);
+            if(start.parentNode === gameArea) gameArea.removeChild(start); 
+            if(enterYourName.parentNode === gameArea) gameArea.removeChild(enterYourName);
+            username = name.slice(0, name.length - 1);
             setTimeout( () => startGame(), 1500);
         });
     }
 
+    let nameTyped = false;
     start.addEventListener("click", async () => { 
+        if(!name) nameTyped = false;
         await pressedStart();
-        if(name.length > 4) await accepted();
-        else await deniedName();
+        if (window.localStorage.getItem(name.slice(0, name.length - 1))) await nameAlreadyUsed();
+        else if(name.length < 4) await nameTooShort(nameTyped);
+        else await accepted();
     } );
     
+    let listening = false;
     enterYourName.addEventListener("click", () => {
         name = "|";
         enterYourName.textContent = name;
-        document.addEventListener("keydown", (event) => {
-            if(event.key === 'Backspace'){
-                name = name.slice(0,-1);
-            }
-            else if( /^[a-zA-Z0-9]$/.test(event.key) && name.length < 15){
-                name = name.slice(0,-1) + event.key.toUpperCase() + "|";
-                console.log(name);
-            }
-            enterYourName.textContent = `${name}`;
-        })
+        if (!listening) { // Check if the listener has already been added
+            listening = true;
+            document.addEventListener("keydown", (event) => {
+                if(event.key === 'Backspace'){
+                    name = name.slice(0,-1);
+                }
+                else if( /^[a-zA-Z0-9]$/.test(event.key) && name.length < 15){
+                    name = name.slice(0,-1) + event.key.toUpperCase() + "|";
+                }
+                enterYourName.textContent = `${name}`;
+            })
+        }
     });
 }
 
