@@ -858,11 +858,11 @@ function menu(){
     document.addEventListener("keydown", async (event) => {
         if(!enter){
             if(event.key === 'Enter') {
+                enter = true;
                 await pressedStart();
                 if (window.localStorage.getItem(name.slice(0, name.length - 1))) await nameAlreadyUsed();
                 else if(name.length < 4) await nameTooShort();
                 else await accepted();
-                enter = true;
             }
         }
     });
