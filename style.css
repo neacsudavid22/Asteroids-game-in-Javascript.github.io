@@ -6,9 +6,27 @@ body {
     user-select: none;        
 }
 
+audio {
+    position: absolute;
+    padding: 10px;
+    right: 0;
+}
+
 svg {
     display: block; 
 }
+
 svg #pointer {
     cursor: pointer;
+}
+
+audio {
+    display: none;
+}
+
+img {
+    background-color: white;
+    position: absolute;
+    width: 50px;
+    height: auto;
 }
