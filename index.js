@@ -68,7 +68,8 @@ const multiplierInterval = setInterval( () => {
 
 function gameOver(){
     window.localStorage.setItem(username, Math.floor(score));
-    
+
+    clearInterval(runLevels);
     clearInterval(scoreInterval);
     clearInterval(multiplierInterval);
     const finalText = document.createElementNS("http://www.w3.org/2000/svg", "text");
@@ -76,7 +77,7 @@ function gameOver(){
     finalText.setAttribute("font-size", 100);
     finalText.setAttribute("font-family", "Anta");
     finalText.setAttribute("x", window.innerWidth / 2);
-    finalText.setAttribute("y", window.innerHeight * 0.38);
+    finalText.setAttribute("y", window.innerHeight * 0.40);
     finalText.setAttribute("text-anchor", "middle");
     finalText.setAttribute("alignment-baseline", "central");
     finalText.textContent = `GAME OVER!`;
@@ -86,10 +87,10 @@ function gameOver(){
     finalScore.setAttribute("font-size", 40);
     finalScore.setAttribute("font-family", "Anta");
     finalScore.setAttribute("x", window.innerWidth / 2);
-    finalScore.setAttribute("y", window.innerHeight * 0.50);
+    finalScore.setAttribute("y", window.innerHeight * 0.53);
     finalScore.setAttribute("text-anchor", "middle");
     finalScore.setAttribute("alignment-baseline", "central"); 
-    finalScore.textContent = `Your Score ${username} Was ${Math.floor(score)}`;
+    finalScore.textContent = `${username} Your Score Was ${Math.floor(score)}`;
 
     gameArea.appendChild(finalText);
     gameArea.appendChild(finalScore);
@@ -99,7 +100,7 @@ function gameOver(){
     pressEnter.setAttribute("font-size", 50);
     pressEnter.setAttribute("font-family", "Anta");
     pressEnter.setAttribute("x", window.innerWidth / 2);
-    pressEnter.setAttribute("y", window.innerHeight * 0.60);
+    pressEnter.setAttribute("y", window.innerHeight * 0.63);
     pressEnter.setAttribute("text-anchor", "middle");
     pressEnter.setAttribute("alignment-baseline", "central"); 
     pressEnter.textContent = "press enter to try again";
@@ -110,10 +111,10 @@ function gameOver(){
         setInterval( 
             () => {
                 a = 1 - a;
-                pressEnter.setAttribute("y", window.innerHeight * (0.60 + a / 100));
+                pressEnter.setAttribute("y", window.innerHeight * (0.63 + a / 100));
             }, 400
         );
-    }, 2000);
+    }, 3000);
 
     document.addEventListener("keydown", (event) => {
         switch(event.code){
@@ -127,9 +128,9 @@ function gameOver(){
 const lifes = [];
 for(let i = 0; i < 3; i++){
     const heart = document.createElementNS("http://www.w3.org/2000/svg", "text");
-    heart.setAttribute("x", window.innerWidth * 0.02 + 18 * i * 2);
+    heart.setAttribute("x", window.innerWidth * 0.02 + 40 * i);
     heart.setAttribute("y", window.innerHeight - 35);
-    heart.setAttribute("font-size", 30);
+    heart.setAttribute("font-size", 35);
 
     heart.textContent = "💛";
     lifes.push(heart);
@@ -145,9 +146,9 @@ class Bullet{
         this.angle = spaceShipAngle;
             
         this.position = {
-            x1: spaceShipPosition.x + 30,
+            x1: spaceShipPosition.x,
             y1: spaceShipPosition.y,
-            x2: spaceShipPosition.x + 30, 
+            x2: spaceShipPosition.x, 
             y2: spaceShipPosition.y + 21
         };
 
@@ -160,27 +161,8 @@ class Bullet{
 
         bullets.push(this);
         gameArea.appendChild(this.bullet);
-        
-        const moveBullet = () => {
 
-            this.position.y1 -= 4;
-            this.position.y2 -= 4;
-    
-            this.bullet.setAttribute("x1", this.position.x1);
-            this.bullet.setAttribute("y1", this.position.y1);
-            this.bullet.setAttribute("x2", this.position.x2);
-            this.bullet.setAttribute("y2", this.position.y2);
-
-            if (this.position.y2 < -200 && this.bullet.parentNode === gameArea) {
-                gameArea.removeChild(this.bullet);
-                bullets.splice(bullets.indexOf(this), 1); 
-                spaceShip.bulletCount.textContent = `${3 - bullets.length}`;
-            } else {
-                requestAnimationFrame(moveBullet);
-            }
-        }
-
-        requestAnimationFrame(moveBullet);
+        this.move();
     }
 
     getRealCoord(){
@@ -194,6 +176,28 @@ class Bullet{
         const bulletPoint1Modified = bulletPoint1.matrixTransform(ctm);
         const bulletPoint2Modified = bulletPoint1.matrixTransform(ctm);
         return [bulletPoint1Modified, bulletPoint2Modified];
+    }
+
+    move(){
+        this.position.y1 -= 4;
+        this.position.y2 -= 4;
+
+        this.bullet.setAttribute("x1", this.position.x1);
+        this.bullet.setAttribute("y1", this.position.y1);
+        this.bullet.setAttribute("x2", this.position.x2);
+        this.bullet.setAttribute("y2", this.position.y2);
+
+        let realPosition = this.getRealCoord();
+
+        if ((realPosition[0].y < -100 || realPosition[0].y  > window.innerHeight + 100 
+            || realPosition[0].x < -100 || realPosition[0].x > window.innerWidth + 100 )
+            && this.bullet.parentNode === gameArea) {
+            gameArea.removeChild(this.bullet);
+            bullets.splice(bullets.indexOf(this), 1); 
+            spaceShip.bulletCount.textContent = `${3 - bullets.length}`;
+        } else {
+            requestAnimationFrame(() => this.move());
+        }
     }
 }
 
@@ -212,14 +216,14 @@ class SpaceShip {
 
     initialize() {
         this.spaceShipBody = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
-        this.spaceShipBody.setAttribute("points", "30,-15 10,40 50,40");
-        //tip(30,-15); left(10,40); right(50,40)
+        this.spaceShipBody.setAttribute("points", "0,-15 -20,40 20,40");
+        //tip(0,-15); left(-20,40); right(20,40)
         this.spaceShipBody.setAttribute("fill", this.color.fill);
         this.spaceShipBody.setAttribute("stroke", this.color.stroke);
         this.spaceShipBody.setAttribute("stroke-width", "5");
 
         this.fire = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
-        this.fire.setAttribute("points", "22,44 38,44 31,58");
+        this.fire.setAttribute("points", "-10,44 10,44 2,58");
         this.fire.setAttribute("fill", "yellow");
         this.fire.setAttribute("stroke", "red");
         this.fire.setAttribute("stroke-width", "3");
@@ -227,21 +231,21 @@ class SpaceShip {
         this.rocketWindow = document.createElementNS("http://www.w3.org/2000/svg", "circle");
         this.rocketWindow.setAttribute("r", "10");
         this.rocketWindow.setAttribute("fill", "cyan");
-        this.rocketWindow.setAttribute("cx", "30");
+        this.rocketWindow.setAttribute("cx", "0");
         this.rocketWindow.setAttribute("cy", "26");
 
         this.bulletCount = document.createElementNS("http://www.w3.org/2000/svg", "text");
         this.bulletCount.setAttribute("fill", "grey");
         this.bulletCount.setAttribute("font-size", `${this.level * 10}`);
         this.bulletCount.setAttribute("font-family", "Anta");
-        this.bulletCount.setAttribute("x", 25);
+        this.bulletCount.setAttribute("x", -5);
         this.bulletCount.setAttribute("y", 32);
         this.bulletCount.textContent = `${3 - bullets.length}`;
 
         this.gun = document.createElementNS("http://www.w3.org/2000/svg", "circle");
         this.gun.setAttribute("r", "4");
         this.gun.setAttribute("fill", "grey");
-        this.gun.setAttribute("cx", "30");
+        this.gun.setAttribute("cx", "0");
         this.gun.setAttribute("cy", "15");
 
         this.spaceShip.appendChild(this.spaceShipBody);
@@ -302,7 +306,7 @@ class SpaceShip {
             this.position.x += this.movement.x;
             this.position.y += this.movement.y;
             this.spaceShip.setAttribute("transform", 
-                `translate(${this.position.x}, ${this.position.y}) rotate(${this.angle}, 30, 21)`);
+                `translate(${this.position.x}, ${this.position.y}) rotate(${this.angle}, 0, 20)`);
         }
 
         if ((this.position.y < -200 || this.position.x < -200 || 
@@ -320,23 +324,23 @@ class SpaceShip {
     }
 
     getSpaceShipPoints(){
-        //"30,-15 10,40 50,40";
+        //0,-15 -20,40 20,40
         if (!this.spaceShipBody.ownerSVGElement) 
             return [];
 
         const ctm = this.spaceShipBody.getScreenCTM();
         const tip = this.spaceShipBody.ownerSVGElement.createSVGPoint();
-        tip.x = 30; 
+        tip.x = 0; 
         tip.y = -15;
         const tipFinal = tip.matrixTransform(ctm);
 
         const left = this.spaceShipBody.ownerSVGElement.createSVGPoint();
-        left.x = 10;
+        left.x = -20;
         left.y = 40;
         const leftFinal = left.matrixTransform(ctm);
 
         const right = this.spaceShipBody.ownerSVGElement.createSVGPoint();
-        right.x = 50;
+        right.x = 20;
         right.y = 40;
         const rightFinal = right.matrixTransform(ctm);
 
@@ -634,19 +638,40 @@ class Asteroid {
 
 let spawningIntervals = [];
 const levelSpec = [ 
-                [1.5, 2, 2.5 ,3], // level 1
-                [5, 5, 5 ,5], // level 2
-                [5, 5, 5 ,5], // level 3
-                [5, 5, 5 ,5], // level 4
-                [5, 5, 5 ,5], // level 5
-                [5, 5, 5 ,5], // level 6
-                [5, 5, 5 ,5], // level 7
-                [5, 5, 5 ,5], // level 8
-                [5, 5, 5 ,5], // level 9
-                [5, 5, 5 ,5], // level 10
-            ];
+    [2, 3, 4, 5], // level 1
+    [2, 2.5, 3, 5], // level 2
+    [1.5, 2, 3 , 4], // level 3
+    [1.5, 2, 2.5 , 4], // level 4
+    [1.5, 2, 2 , 4], // level 5
+    [1, 1.5, 2 , 3], // level 6
+    [1, 1.5, 2 , 3], // level 7
+    [1, 1, 1.5 , 3], // level 8
+    [0.5, 1, 1 , 2.5], // level 9
+    [0.5, 0.5, 1 , 2], // level 10
+];
+
+const messages = [
+    'Begin!', 'Nice! Keep going', 'Good.. Dont Give Up!', 'Resist! Resist!',
+    'Impressive!','Meteor Rain','No more luck',
+    'Survive..', '???', 'Eternal Rain'
+];
+let level = 0;
 
 function spawnAsteroids(level){
+    const levelDisplay = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    level === 10 ? levelDisplay.setAttribute("fill", "red") : levelDisplay.setAttribute("fill", "white");
+    levelDisplay.setAttribute("font-size", 40);
+    levelDisplay.setAttribute("font-family", "Anta");
+    levelDisplay.setAttribute("x", window.innerWidth * 0.5);
+    levelDisplay.setAttribute("y", window.innerHeight * 0.5);
+    levelDisplay.setAttribute("text-anchor", "middle");
+    levelDisplay.setAttribute("baseline-direction", "central");
+    levelDisplay.setAttribute("text-decoration", "underline");
+    levelDisplay.setAttribute("transform-origin", "center");
+    levelDisplay.textContent = `Level ${level + 1} - ${messages[level]}`;
+
+    gameArea.appendChild(levelDisplay);
+    setTimeout(() => {gameArea.removeChild(levelDisplay)}, 2500);
     stopSpawning();
     for(let i = 0; i < 4; i++){
         spawningIntervals.push(setInterval(() => {
@@ -662,7 +687,8 @@ function stopSpawning() {
     spawningIntervals = [];
 }
 
-spawnAsteroids(0);
+spawnAsteroids(level++);
+const runLevels = setInterval(() => { spawnAsteroids(level++) }, 30000);
 
 document.addEventListener('keydown', (event)=>{
     switch(event.code){
@@ -842,6 +868,7 @@ function menu(){
             if(start.parentNode === gameArea) gameArea.removeChild(start); 
             if(enterYourName.parentNode === gameArea) gameArea.removeChild(enterYourName);
             if(leaderBoard.parentNode === gameArea) gameArea.removeChild(leaderBoard); 
+            if(intructions.parentNode === gameArea) gameArea.removeChild(intructions); 
             username = name.slice(0, name.length - 1);
             setTimeout(() => startGame(), 1500);
         });
