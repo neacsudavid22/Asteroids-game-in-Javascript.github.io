@@ -180,9 +180,8 @@ class Bullet{
 
     getRealCoord(){
         const bcr = this.bullet.getBoundingClientRect();
-        const bulletPoint1 = { x: bcr.left, y: bcr.top};
-        const bulletPoint2 = { x: bcr.right, y: bcr.bottom};
-        return {bulletPoint1, bulletPoint2};
+        const realPosition = { x1: bcr.left, y1: bcr.top,  x2: bcr.right, y2: bcr.bottom };
+        return realPosition;
     }
 
     move(){
@@ -193,10 +192,10 @@ class Bullet{
         this.bullet.setAttribute('y1', this.position.y1);
         this.bullet.setAttribute('y2', this.position.y2);
 
-        let realPosition = this.getRealCoord();
+        const realPosition = this.getRealCoord();
 
-        if ((realPosition.bulletPoint1.y < -100 || realPosition.bulletPoint1.y  > window.innerHeight + 100 
-            || realPosition.bulletPoint1.x < -100 || realPosition.bulletPoint1.x > window.innerWidth + 100 )
+        if ((realPosition.y1 < -100 || realPosition.y1  > window.innerHeight + 100 
+            || realPosition.x1 < -100 || realPosition.x1 > window.innerWidth + 100 )
             && this.bullet.parentNode === gameArea) {
             gameArea.removeChild(this.bullet);
             bullets.splice(bullets.indexOf(this), 1); 
@@ -544,12 +543,12 @@ class Asteroid {
         const hit = () => {
             for (const bullet of bullets) {
                 const coord = bullet.getRealCoord();
-                const dx1 = coord.bulletPoint1.x - this.position.x;
-                const dy1 = coord.bulletPoint1.y - this.position.y;
+                const dx1 = coord.x1 - this.position.x;
+                const dy1 = coord.y1 - this.position.y;
                 const distance1 = Math.sqrt(dx1 * dx1 + dy1 * dy1);
 
-                const dx2 = coord.bulletPoint2.x - this.position.x;
-                const dy2 = coord.bulletPoint2.y - this.position.y;
+                const dx2 = coord.x2 - this.position.x;
+                const dy2 = coord.y2 - this.position.y;
                 const distance2 = Math.sqrt(dx2 * dx2 + dy2 * dy2);
         
                 if (distance1 < this.radius || distance2 < this.radius) 
