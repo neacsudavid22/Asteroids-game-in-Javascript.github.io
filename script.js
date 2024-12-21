@@ -164,6 +164,7 @@ class Bullet{
             y2: spaceShipPosition.y + 21
         };
 
+
         this.bullet.setAttribute('x1', this.position.x1);
         this.bullet.setAttribute('y1', this.position.y1);
         this.bullet.setAttribute('x2', this.position.x2);
@@ -382,93 +383,99 @@ function updatePosition() {
 updatePosition();
 
 class Asteroid {    
-    constructor(level) {
+    constructor(level, {position, direction} = {}) {
         const index = Math.round(Math.random() * 7);
 
-        switch(index){
-            case 0:
-                this.position = { 
-                    x: -200, 
-                    y: Math.random() * window.innerHeight / 2
-                };
-                this.direction = {
-                        horizontal: 1,
-                        vertical: Math.random() * 0.5
-                };
-                break;
-            case 1:
-                this.position = { 
-                    x: -200,
-                    y: window.innerHeight/2 + Math.random() * window.innerHeight/2, 
-                };
-                this.direction = {
-                        horizontal: 1,
-                        vertical: Math.random() * 0.5
-                };
-                break;
-            case 2:
-                this.position = { 
-                    x: Math.random() * window.innerWidth/2,
-                    y: window.innerHeight + 200
-                };
-                this.direction = {
-                        horizontal: Math.random() * 0.5,
-                        vertical:  - 1
-                };
-                break;
-            case 3:
-                this.position = { 
-                    x: window.innerWidth/2 + Math.random() * window.innerWidth/2,
-                    y: window.innerHeight + 200
-                };
-                this.direction = {
-                        horizontal: -1 * Math.random() * 0.5,
-                        vertical: -1
-                };
-                break;
-
-            case 4:
-                this.position = { 
-                    x: window.innerWidth + 200,
-                    y: window.innerHeight/2 + Math.random() * window.innerHeight/2
-                };
-                this.direction = {
-                        horizontal: -1,
-                        vertical: -1 * Math.random() * 0.5,
-                };
-                break;
-            case 5:
-                this.position = { 
-                    x: window.innerWidth + 200,
-                    y: Math.random() * window.innerHeight/2
-                };
-                this.direction = {
-                        horizontal: -1,
-                        vertical: Math.random() * 0.5,
-                };
-                break;
-            case 6:
-                this.position = { 
-                    x: window.innerWidth/2 + Math.random() * window.innerWidth/2,
-                    y: -200
-                };
-                this.direction = {
-                        horizontal: -1 * Math.random() * 0.5,
-                        vertical: 1
-                };
-                break;
-            case 7:
-                this.position = { 
-                    x: Math.random() * window.innerWidth/2,
-                    y: -200
-                };
-                this.direction = {
-                        horizontal: Math.random() * 0.5,
-                        vertical: 1
-                };
-                break;
+        if(!position && !direction){
+            switch(index){
+                case 0:
+                    this.position = { 
+                        x: -200, 
+                        y: Math.random() * window.innerHeight / 2
+                    };
+                    this.direction = {
+                            horizontal: 1,
+                            vertical: Math.random() * 0.5
+                    };
+                    break;
+                case 1:
+                    this.position = { 
+                        x: -200,
+                        y: window.innerHeight/2 + Math.random() * window.innerHeight/2, 
+                    };
+                    this.direction = {
+                            horizontal: 1,
+                            vertical: Math.random() * 0.5
+                    };
+                    break;
+                case 2:
+                    this.position = { 
+                        x: Math.random() * window.innerWidth/2,
+                        y: window.innerHeight + 200
+                    };
+                    this.direction = {
+                            horizontal: Math.random() * 0.5,
+                            vertical:  - 1
+                    };
+                    break;
+                case 3:
+                    this.position = { 
+                        x: window.innerWidth/2 + Math.random() * window.innerWidth/2,
+                        y: window.innerHeight + 200
+                    };
+                    this.direction = {
+                            horizontal: -1 * Math.random() * 0.5,
+                            vertical: -1
+                    };
+                    break;
+    
+                case 4:
+                    this.position = { 
+                        x: window.innerWidth + 200,
+                        y: window.innerHeight/2 + Math.random() * window.innerHeight/2
+                    };
+                    this.direction = {
+                            horizontal: -1,
+                            vertical: -1 * Math.random() * 0.5,
+                    };
+                    break;
+                case 5:
+                    this.position = { 
+                        x: window.innerWidth + 200,
+                        y: Math.random() * window.innerHeight/2
+                    };
+                    this.direction = {
+                            horizontal: -1,
+                            vertical: Math.random() * 0.5,
+                    };
+                    break;
+                case 6:
+                    this.position = { 
+                        x: window.innerWidth/2 + Math.random() * window.innerWidth/2,
+                        y: -200
+                    };
+                    this.direction = {
+                            horizontal: -1 * Math.random() * 0.5,
+                            vertical: 1
+                    };
+                    break;
+                case 7:
+                    this.position = { 
+                        x: Math.random() * window.innerWidth/2,
+                        y: -200
+                    };
+                    this.direction = {
+                            horizontal: Math.random() * 0.5,
+                            vertical: 1
+                    };
+                    break;
+            }
         }
-
+        else{
+            this.position = { x: position.x, y: position.y };
+            this.direction = { horizontal: direction.horizontal, vertical: direction.vertical };
+        }
+    
         const colors = ['gray','orange','red','darkred'];
         this.level = level;
         this.color = colors[level-1];
