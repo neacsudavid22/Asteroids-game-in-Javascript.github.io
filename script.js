@@ -186,7 +186,7 @@ class Bullet{
         bulletPoint2.x = this.position.x2;
         bulletPoint2.y = this.position.y2;
         const bulletPoint1Modified = bulletPoint1.matrixTransform(ctm);
-        const bulletPoint2Modified = bulletPoint1.matrixTransform(ctm);
+        const bulletPoint2Modified = bulletPoint2.matrixTransform(ctm);
         return [bulletPoint1Modified, bulletPoint2Modified];
     }
 
