@@ -178,31 +178,24 @@ class Bullet{
     }
 
     getRealCoord(){
-        const ctm = this.bullet.getScreenCTM();
-        const bulletPoint1 = this.bullet.ownerSVGElement.createSVGPoint();
-        bulletPoint1.x = this.position.x1;
-        bulletPoint1.y = this.position.y1;
-        const bulletPoint2 = this.bullet.ownerSVGElement.createSVGPoint();
-        bulletPoint2.x = this.position.x2;
-        bulletPoint2.y = this.position.y2;
-        const bulletPoint1Modified = bulletPoint1.matrixTransform(ctm);
-        const bulletPoint2Modified = bulletPoint2.matrixTransform(ctm);
-        return [bulletPoint1Modified, bulletPoint2Modified];
+        const bcr = this.bullet.getBoundingClientRect();
+        const bulletPoint1 = { x: bcr.left, y: bcr.top};
+        const bulletPoint2 = { x: bcr.right, y: bcr.bottom};
+        return {bulletPoint1, bulletPoint2};
     }
 
     move(){
+
         this.position.y1 -= 4;
         this.position.y2 -= 4;
 
-        this.bullet.setAttribute("x1", this.position.x1);
-        this.bullet.setAttribute("y1", this.position.y1);
-        this.bullet.setAttribute("x2", this.position.x2);
-        this.bullet.setAttribute("y2", this.position.y2);
+        this.bullet.setAttribute('y1', this.position.y1);
+        this.bullet.setAttribute('y2', this.position.y2);
 
         let realPosition = this.getRealCoord();
 
-        if ((realPosition[0].y < -100 || realPosition[0].y  > window.innerHeight + 100 
-            || realPosition[0].x < -100 || realPosition[0].x > window.innerWidth + 100 )
+        if ((realPosition.bulletPoint1.y < -100 || realPosition.bulletPoint1.y  > window.innerHeight + 100 
+            || realPosition.bulletPoint1.x < -100 || realPosition.bulletPoint1.x > window.innerWidth + 100 )
             && this.bullet.parentNode === gameArea) {
             gameArea.removeChild(this.bullet);
             bullets.splice(bullets.indexOf(this), 1); 
@@ -389,97 +382,91 @@ function updatePosition() {
 updatePosition();
 
 class Asteroid {    
-    constructor(level, {position, direction}) {
+    constructor(level) {
         const index = Math.round(Math.random() * 7);
 
-        if(!position && !direction){
-            switch(index){
-                case 0:
-                    this.position = { 
-                        x: -200, 
-                        y: Math.random() * window.innerHeight / 2
-                    };
-                    this.direction = {
-                         horizontal: 1,
-                         vertical: Math.random() * 0.5
-                    };
-                    break;
-                case 1:
-                    this.position = { 
-                        x: -200,
-                        y: window.innerHeight/2 + Math.random() * window.innerHeight/2, 
-                    };
-                    this.direction = {
-                            horizontal: 1,
-                            vertical: Math.random() * 0.5
-                    };
-                    break;
-                case 2:
-                    this.position = { 
-                        x: Math.random() * window.innerWidth/2,
-                        y: window.innerHeight + 200
-                    };
-                    this.direction = {
-                            horizontal: Math.random() * 0.5,
-                            vertical:  - 1
-                    };
-                    break;
-                case 3:
-                    this.position = { 
-                        x: window.innerWidth/2 + Math.random() * window.innerWidth/2,
-                        y: window.innerHeight + 200
-                    };
-                    this.direction = {
-                            horizontal: -1 * Math.random() * 0.5,
-                            vertical: -1
-                    };
-                    break;
-    
-                case 4:
-                    this.position = { 
-                        x: window.innerWidth + 200,
-                        y: window.innerHeight/2 + Math.random() * window.innerHeight/2
-                    };
-                    this.direction = {
-                            horizontal: -1,
-                            vertical: -1 * Math.random() * 0.5,
-                    };
-                    break;
-                case 5:
-                    this.position = { 
-                        x: window.innerWidth + 200,
-                        y: Math.random() * window.innerHeight/2
-                    };
-                    this.direction = {
-                            horizontal: -1,
-                            vertical: Math.random() * 0.5,
-                    };
-                    break;
-                case 6:
-                    this.position = { 
-                        x: window.innerWidth/2 + Math.random() * window.innerWidth/2,
-                        y: -200
-                    };
-                    this.direction = {
-                            horizontal: -1 * Math.random() * 0.5,
-                            vertical: 1
-                    };
-                    break;
-                case 7:
-                    this.position = { 
-                        x: Math.random() * window.innerWidth/2,
-                        y: -200
-                    };
-                    this.direction = {
-                            horizontal: Math.random() * 0.5,
-                            vertical: 1
-                    };
-                    break;
-            }
-        }
-        else{
-            this.position = { x: position.x, y: position.y };
-            this.direction = { horizontal: direction.horizontal, vertical: direction.vertical };
+        switch(index){
+            case 0:
+                this.position = { 
+                    x: -200, 
+                    y: Math.random() * window.innerHeight / 2
+                };
+                this.direction = {
+                        horizontal: 1,
+                        vertical: Math.random() * 0.5
+                };
+                break;
+            case 1:
+                this.position = { 
+                    x: -200,
+                    y: window.innerHeight/2 + Math.random() * window.innerHeight/2, 
+                };
+                this.direction = {
+                        horizontal: 1,
+                        vertical: Math.random() * 0.5
+                };
+                break;
+            case 2:
+                this.position = { 
+                    x: Math.random() * window.innerWidth/2,
+                    y: window.innerHeight + 200
+                };
+                this.direction = {
+                        horizontal: Math.random() * 0.5,
+                        vertical:  - 1
+                };
+                break;
+            case 3:
+                this.position = { 
+                    x: window.innerWidth/2 + Math.random() * window.innerWidth/2,
+                    y: window.innerHeight + 200
+                };
+                this.direction = {
+                        horizontal: -1 * Math.random() * 0.5,
+                        vertical: -1
+                };
+                break;
+
+            case 4:
+                this.position = { 
+                    x: window.innerWidth + 200,
+                    y: window.innerHeight/2 + Math.random() * window.innerHeight/2
+                };
+                this.direction = {
+                        horizontal: -1,
+                        vertical: -1 * Math.random() * 0.5,
+                };
+                break;
+            case 5:
+                this.position = { 
+                    x: window.innerWidth + 200,
+                    y: Math.random() * window.innerHeight/2
+                };
+                this.direction = {
+                        horizontal: -1,
+                        vertical: Math.random() * 0.5,
+                };
+                break;
+            case 6:
+                this.position = { 
+                    x: window.innerWidth/2 + Math.random() * window.innerWidth/2,
+                    y: -200
+                };
+                this.direction = {
+                        horizontal: -1 * Math.random() * 0.5,
+                        vertical: 1
+                };
+                break;
+            case 7:
+                this.position = { 
+                    x: Math.random() * window.innerWidth/2,
+                    y: -200
+                };
+                this.direction = {
+                        horizontal: Math.random() * 0.5,
+                        vertical: 1
+                };
+                break;
         }
 
         const colors = ['gray','orange','red','darkred'];
@@ -550,12 +537,12 @@ class Asteroid {
         const hit = () => {
             for (const bullet of bullets) {
                 const coord = bullet.getRealCoord();
-                const dx1 = coord[0].x - this.position.x;
-                const dy1 = coord[0].y - this.position.y;
+                const dx1 = coord.bulletPoint1.x - this.position.x;
+                const dy1 = coord.bulletPoint1.y - this.position.y;
                 const distance1 = Math.sqrt(dx1 * dx1 + dy1 * dy1);
 
-                const dx2 = coord[1].x - this.position.x;
-                const dy2 = coord[1].y - this.position.y;
+                const dx2 = coord.bulletPoint2.x - this.position.x;
+                const dy2 = coord.bulletPoint2.y - this.position.y;
                 const distance2 = Math.sqrt(dx2 * dx2 + dy2 * dy2);
         
                 if (distance1 < this.radius || distance2 < this.radius) 
@@ -700,7 +687,7 @@ function spawnAsteroids(level){
     stopSpawning();
     for(let i = 0; i < 4; i++){
         spawningIntervals.push(setInterval(() => {
-            const asteroid = new Asteroid(i + 1, { position: undefined, direction: undefined});
+            const asteroid = new Asteroid(i + 1);
             asteroids.push(asteroid);
             asteroid.move();
         }, levelSpec[level][i] * 1000));
