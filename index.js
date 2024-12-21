@@ -31,6 +31,8 @@ function getScores(){
 }
 
 function startGame() {
+const lf_lost = document.querySelector('#lf_lost');
+
 let bullets = [];
 let asteroids = [];
 const keys = {
@@ -126,7 +128,11 @@ function gameOver(){
 }
 
 const lifes = [];
-for(let i = 0; i < 3; i++){
+
+function drawHeart(i) {
+    const heartAudio = document.createElement('audio');
+    heartAudio.src = 'public/new-level-142995.mp3';
+    heartAudio.play();
     const heart = document.createElementNS("http://www.w3.org/2000/svg", "text");
     heart.setAttribute("x", window.innerWidth * 0.02 + 40 * i);
     heart.setAttribute("y", window.innerHeight - 35);
@@ -137,8 +143,14 @@ for(let i = 0; i < 3; i++){
     gameArea.appendChild(lifes[i]);
 }
 
+for(let i = 0; i < 3; i++) drawHeart(i);
+
 class Bullet{
     constructor({spaceShipPosition, spaceShipAngle}) {
+        const shoot_e = document.createElement('audio');
+        shoot_e.src = 'public/retro-laser-1-236669.mp3';
+        shoot_e.play();
+
         this.bullet = document.createElementNS("http://www.w3.org/2000/svg", "line");
         this.bullet.setAttribute("stroke", "lime");
         this.bullet.setAttribute("stroke-width", 4);
@@ -258,11 +270,13 @@ class SpaceShip {
  
         this.move();
         this.engineAnimation();
+        this.newLife(5000);
     }
 
     damagedAnimation(){
         return new Promise((resolve) => {
             spaceShip.invulnerable = true;
+            lf_lost.play();
             setTimeout( () => {
                 this.spaceShipBody.setAttribute("fill", "orange")
                 this.spaceShipBody.setAttribute("stroke", "white")
@@ -282,6 +296,16 @@ class SpaceShip {
                 }, 400);
             }
         );
+    }
+
+    newLife(checkScore){
+        setInterval(() => {
+            if(score > checkScore){
+                checkScore += 5000;
+                drawHeart(this.lifes);
+                this.lifes+=1;
+            }
+        }, 500);
     }
 
     engineAnimation(){
@@ -658,6 +682,7 @@ const messages = [
 let level = 0;
 
 function spawnAsteroids(level){
+
     const levelDisplay = document.createElementNS("http://www.w3.org/2000/svg", "text");
     level === 10 ? levelDisplay.setAttribute("fill", "red") : levelDisplay.setAttribute("fill", "white");
     levelDisplay.setAttribute("font-size", 40);
@@ -688,7 +713,7 @@ function stopSpawning() {
 }
 
 spawnAsteroids(level++);
-const runLevels = setInterval(() => { spawnAsteroids(level++) }, 30000);
+const runLevels = setInterval(() => { score += 100; spawnAsteroids(level++); }, 30000);
 
 document.addEventListener('keydown', (event)=>{
     switch(event.code){
@@ -884,6 +909,8 @@ function menu(){
     let enter = false;
     document.addEventListener("keydown", async (event) => {
         if(!enter){
+            const bg_music = document.querySelector('#bg_music');
+            bg_music.play();
             if(event.key === 'Enter') {
                 enter = true;
                 await pressedStart();
