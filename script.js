@@ -825,11 +825,6 @@ function menu(){
     mode.textContent = `Game Mode: ${modeOptions[Number(gameMode)]}`;
     gameArea.appendChild(mode);
 
-    mode.addEventListener('click', () => {
-        gameMode = !gameMode;
-        mode.textContent = `Game Mode: ${modeOptions[Number(gameMode)]}`;
-    })
-
     const leaderBoard = document.createElementNS("http://www.w3.org/2000/svg", "g");
 
     let items = getScores();
@@ -866,17 +861,17 @@ function menu(){
     }
     gameArea.appendChild(leaderBoard);
 
-    const intructions = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    const instructions = document.createElementNS("http://www.w3.org/2000/svg", "text");
 
-    intructions.setAttribute("fill", "white");
-    intructions.setAttribute("font-size", 20);
-    intructions.setAttribute("font-family", "Anta");
-    intructions.setAttribute("x", window.innerWidth * 0.5);
-    intructions.setAttribute("y", window.innerHeight * 0.95);
-    intructions.setAttribute("text-anchor", "middle");
-    intructions.setAttribute("baseline-direction", "central");
-    intructions.textContent = "arrows - move,  z - rotation left,  c - rotation right,  x - fire  (max 3 bullets on screen), new life on each 1000 points";
-    gameArea.appendChild(intructions);
+    instructions.setAttribute("fill", "white");
+    instructions.setAttribute("font-size", 20);
+    instructions.setAttribute("font-family", "Anta");
+    instructions.setAttribute("x", window.innerWidth * 0.5);
+    instructions.setAttribute("y", window.innerHeight * 0.95);
+    instructions.setAttribute("text-anchor", "middle");
+    instructions.setAttribute("baseline-direction", "central");
+    instructions.textContent = "arrows - move,  z - rotation left,  c - rotation right,  x - fire  (max 3 bullets on screen), new life on each 1000 points";
+    gameArea.appendChild(instructions);
     
     const start = document.createElementNS("http://www.w3.org/2000/svg", "text");
     start.setAttribute("id", "pointer");
@@ -910,6 +905,13 @@ function menu(){
     let pulseScale = 0.05;
     const pulse = setInterval( () => { enterYourName.setAttribute("transform", `scale(${1 + pulseScale})`); pulseScale = 0.05 - pulseScale; }, 500 );
     let name = '';
+
+    mode.addEventListener('click', () => {
+        gameMode = !gameMode;
+        mode.textContent = `Game Mode: ${modeOptions[Number(gameMode)]}`;
+        let scoreMin = gameMode ? 1000 : 5000;
+        instructions.textContent = `arrows - move,  z - rotation left,  c - rotation right,  x - fire  (max 3 bullets on screen), new life on each ${scoreMin} points`;
+    })
 
     async function nameTooShort(){
         return new Promise( (resolve) => {
@@ -950,7 +952,7 @@ function menu(){
             if(start.parentNode === gameArea) gameArea.removeChild(start); 
             if(enterYourName.parentNode === gameArea) gameArea.removeChild(enterYourName);
             if(leaderBoard.parentNode === gameArea) gameArea.removeChild(leaderBoard); 
-            if(intructions.parentNode === gameArea) gameArea.removeChild(intructions); 
+            if(instructions.parentNode === gameArea) gameArea.removeChild(instructions); 
             if(mode.parentNode === gameArea) gameArea.removeChild(mode); 
 
             username = name.slice(0, name.length - 1);
