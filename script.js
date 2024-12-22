@@ -3,6 +3,8 @@ gameArea.style.background = "black";
 gameArea.setAttribute("width", window.innerWidth);
 gameArea.setAttribute("height", window.innerHeight);
 
+let gameMode = true;
+
 let username = '';
 
 function getScores(){
@@ -18,7 +20,7 @@ function getScores(){
     window.localStorage.clear();
     let limit = 0;
     for(let item of items){
-        if(limit < 100){
+        if(limit < 10){
             window.localStorage.setItem(item.key, item.value);
             limit++;
         }
@@ -131,7 +133,7 @@ const lifes = [];
 
 function drawHeart(i) {
     const heartAudio = document.createElement('audio');
-    heartAudio.src = 'public/new-level-142995.mp3';
+    heartAudio.src = 'media/new-level-142995.mp3';
     heartAudio.play();
     const heart = document.createElementNS("http://www.w3.org/2000/svg", "text");
     heart.setAttribute("x", window.innerWidth * 0.02 + 40 * i);
@@ -148,7 +150,7 @@ for(let i = 0; i < 3; i++) drawHeart(i);
 class Bullet{
     constructor({spaceShipPosition, spaceShipAngle}) {
         const shoot_e = document.createElement('audio');
-        shoot_e.src = 'public/retro-laser-1-236669.mp3';
+        shoot_e.src = 'media/retro-laser-1-236669.mp3';
         shoot_e.play();
 
         this.bullet = document.createElementNS("http://www.w3.org/2000/svg", "line");
@@ -263,7 +265,7 @@ class SpaceShip {
  
         this.move();
         this.engineAnimation();
-        this.newLife(5000);
+        this.newLife(gameMode ? 1000 : 5000);
     }
 
     damagedAnimation(){
@@ -294,7 +296,7 @@ class SpaceShip {
     newLife(checkScore){
         setInterval(() => {
             if(score > checkScore){
-                checkScore += 5000;
+                checkScore += gameMode ? 1000 : 5000;
                 drawHeart(this.lifes);
                 this.lifes+=1;
             }
@@ -382,7 +384,7 @@ function updatePosition() {
 updatePosition();
 
 class Asteroid {    
-    constructor(level, {position, direction} = {}) {
+    constructor(level, {position, direction} = {}, scoreLevel = 1) {
         const index = Math.round(Math.random() * 7);
 
         if(!position && !direction){
@@ -477,6 +479,7 @@ class Asteroid {
     
         const colors = ['gray','orange','red','darkred'];
         this.level = level;
+        this.scoreLevel = scoreLevel;
         this.color = colors[level-1];
         this.speed = 5.5 - level + Math.random();
         this.radius = this.level * 20 + 5;
@@ -490,7 +493,7 @@ class Asteroid {
         this.asteroidCircle.setAttribute("cx", 0);
         this.asteroidCircle.setAttribute("cy", 0);
         this.asteroidCircle.setAttribute("r", this.radius);
-        this.asteroidCircle.setAttribute("stroke", "white");
+        this.scoreLevel === 1 ? this.asteroidCircle.setAttribute("stroke", "white") : this.asteroidCircle.setAttribute("stroke", "yellow");
         this.asteroidCircle.setAttribute("fill", `${this.color}`);
         this.asteroidCircle.setAttribute("stroke-width", "2");
 
@@ -516,19 +519,16 @@ class Asteroid {
         return new Promise((resolve) => {
             setTimeout( () => {
                 this.asteroidCircle.setAttribute("fill", "grey")
-                this.asteroidCircle.setAttribute("stroke", "white")
             }, 50);
             setTimeout( () => {
                 this.asteroidCircle.setAttribute("fill", "black")
-                this.asteroidCircle.setAttribute("stroke", "white")
             }, 100);
             setTimeout( () => {
                 this.asteroidCircle.setAttribute("fill", "grey")
-                this.asteroidCircle.setAttribute("stroke", "white")
             }, 150);
             setTimeout( () => {
                 this.asteroidCircle.setAttribute("fill", "black")
-                this.asteroidCircle.setAttribute("stroke", "white")
+                if(gameMode)this.asteroidCircle.setAttribute("fill", `${this.color}`);
                 resolve()
             }, 200);
             }
@@ -552,8 +552,7 @@ class Asteroid {
                 const distance2 = Math.sqrt(dx2 * dx2 + dy2 * dy2);
         
                 if (distance1 < this.radius || distance2 < this.radius) 
-                    return bullet; // Collision detected
-
+                    return bullet; 
             }
             return null; 
         };
@@ -601,7 +600,52 @@ class Asteroid {
                 spaceShip.invulnerable = false;
             }
         }
-        else if(bulletHit){
+        else if(bulletHit && gameMode){
+
+            gameArea.removeChild(bulletHit.bullet);
+            bullets.splice(bullets.indexOf(bulletHit), 1);
+            spaceShip.bulletCount.textContent = `${3 - bullets.length}`;
+
+            if(this.level > 1){
+                gameArea.removeChild(this.asteroid);
+                const asteroidNew = new Asteroid(
+                    this.level - 1, 
+                    { 
+                        position: { x: this.position.x, y: this.position.y },
+                        direction: this.direction 
+                    },
+                    this.scoreLevel + 1
+                );
+                asteroidNew.move();
+                asteroidNew.destroyedAnimation();     
+            }
+            else {
+                await this.destroyedAnimation();    
+                gameArea.removeChild(this.asteroid); 
+                switch(this.scoreLevel){
+                    case 1:
+                        score += 10 * combo;
+                        break;
+                    case 2:
+                        score += 20 * combo;
+                        break;
+                    case 3: 
+                        score += 30 * combo;
+                        break;
+                    case 4: 
+                        score += 40 * combo;
+                        break;
+                }
+    
+                if(Date.now() - timeCombo < 3000) combo += 0.1;
+                else combo = 1;
+    
+                timeCombo = Date.now();
+    
+                asteroids.splice(asteroids.indexOf(this), 1);
+            }
+        }
+        else if(bulletHit && !gameMode){
 
             gameArea.removeChild(bulletHit.bullet);
             bullets.splice(bullets.indexOf(bulletHit), 1);
@@ -766,10 +810,29 @@ document.addEventListener('keyup', (event)=>{
 function menu(){
     console.log(window.localStorage);
 
+    const modeOptions = ["modern", "classic"];
+    const mode = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    mode.setAttribute("id", "pointer");
+    mode.setAttribute("fill", "white");
+    mode.setAttribute("font-size", 40);
+    mode.setAttribute("font-family", "Anta");
+    mode.setAttribute("x", window.innerWidth * 0.5);
+    mode.setAttribute("y", window.innerHeight * 0.6);
+    mode.setAttribute("text-anchor", "middle");
+    mode.setAttribute("baseline-direction", "central");
+    mode.setAttribute("transform-origin", "center");
+
+    mode.textContent = `Game Mode: ${modeOptions[Number(gameMode)]}`;
+    gameArea.appendChild(mode);
+
+    mode.addEventListener('click', () => {
+        gameMode = !gameMode;
+        mode.textContent = `Game Mode: ${modeOptions[Number(gameMode)]}`;
+    })
+
     const leaderBoard = document.createElementNS("http://www.w3.org/2000/svg", "g");
 
     let items = getScores();
-    let pos = 1;
     const scoreTitle = document.createElementNS("http://www.w3.org/2000/svg", "text");
     scoreTitle.setAttribute("fill", "white");
     scoreTitle.setAttribute("font-size", 20);
@@ -783,22 +846,23 @@ function menu(){
     
     leaderBoard.appendChild(scoreTitle);
 
+    let pos = 1;
     let limit = 0;
     for(let item of items){
         const itemText = document.createElementNS("http://www.w3.org/2000/svg", "text");
         itemText.setAttribute("fill", "white");
-        itemText.setAttribute("font-size", 14);
+        itemText.setAttribute("font-size", 16);
         itemText.setAttribute("font-family", "Anta");
         itemText.setAttribute("x", window.innerWidth * 0.02);
-        itemText.setAttribute("y", window.innerHeight * (0.08 + 0.03 * pos));
+        itemText.setAttribute("y", window.innerHeight * (0.08 + 0.04 * pos));
         itemText.setAttribute("text-anchor", "begining");
         itemText.setAttribute("baseline-direction", "left");
-        itemText.textContent = `${pos}. ${item.key} - ${item.value}`;
+        itemText.textContent = `${pos}. ${item.key} on ${modeOptions[Number(gameMode)].toUpperCase()} - ${item.value}`;
         pos++;
         leaderBoard.appendChild(itemText);
 
         limit++;
-        if(limit === 10) break;
+        if(limit === 5) break;
     }
     gameArea.appendChild(leaderBoard);
 
@@ -811,7 +875,7 @@ function menu(){
     intructions.setAttribute("y", window.innerHeight * 0.95);
     intructions.setAttribute("text-anchor", "middle");
     intructions.setAttribute("baseline-direction", "central");
-    intructions.textContent = "arrows - move,  z - rotation left,  c - rotation right,  x - fire  (max 3 bullets on screen)";
+    intructions.textContent = "arrows - move,  z - rotation left,  c - rotation right,  x - fire  (max 3 bullets on screen), new life on each 1000 points";
     gameArea.appendChild(intructions);
     
     const start = document.createElementNS("http://www.w3.org/2000/svg", "text");
@@ -887,6 +951,8 @@ function menu(){
             if(enterYourName.parentNode === gameArea) gameArea.removeChild(enterYourName);
             if(leaderBoard.parentNode === gameArea) gameArea.removeChild(leaderBoard); 
             if(intructions.parentNode === gameArea) gameArea.removeChild(intructions); 
+            if(mode.parentNode === gameArea) gameArea.removeChild(mode); 
+
             username = name.slice(0, name.length - 1);
             setTimeout(() => startGame(), 1500);
         });
